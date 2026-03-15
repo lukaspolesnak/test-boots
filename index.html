@@ -1,500 +1,120 @@
 <!DOCTYPE html>
 
-<html lang="sk">
+<html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>FootScan LiDAR</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<title>FootScan</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-:root{--c:#00e5ff;--p:#7c3aed;--g:#22c55e;--t:#f0f0f8;--t2:#8888aa}
-html,body{width:100%;height:100%;background:#000;font-family:'DM Sans',sans-serif;overflow:hidden;color:var(--t)}
-.screen{position:absolute;inset:0;display:none;flex-direction:column}
-.screen.active{display:flex}
-
-/* ── SPLASH ── */
-#splash{
-background:radial-gradient(ellipse at 55% 40%,#0d1f3c,#07070f 70%);
-align-items:center;justify-content:center;padding:40px 28px;text-align:center;
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body {
+  width:100%; height:100%;
+  background:#000;
+  font-family:sans-serif;
+  color:#fff;
+  overflow:hidden;
 }
-.logo{
-font-family:‘Bebas Neue’,sans-serif;font-size:56px;letter-spacing:7px;
-background:linear-gradient(135deg,var(–c),var(–p));
--webkit-background-clip:text;-webkit-text-fill-color:transparent;
-margin-bottom:4px;animation:lp 3s ease-in-out infinite;
+#wrap {
+  position:fixed; inset:0;
+  display:flex; align-items:center; justify-content:center;
+  background:#000;
 }
-@keyframes lp{0%,100%{filter:drop-shadow(0 0 18px rgba(0,229,255,.3))}50%{filter:drop-shadow(0 0 38px rgba(0,229,255,.7))}}
-.tagline{font-size:12px;color:var(–t2);letter-spacing:3px;text-transform:uppercase;margin-bottom:44px}
-
-.rings{position:relative;width:150px;height:150px;margin:0 auto 44px}
-.ring{position:absolute;inset:0;border-radius:50%;border:1px solid rgba(0,229,255,.2);animation:re 3s ease-out infinite}
-.ring:nth-child(2){animation-delay:.8s}.ring:nth-child(3){animation-delay:1.6s}
-@keyframes re{0%{transform:scale(.1);opacity:.9}100%{transform:scale(1.8);opacity:0}}
-.rc{position:absolute;inset:26px;border-radius:50%;background:rgba(0,229,255,.06);border:1.5px solid rgba(0,229,255,.4);display:flex;align-items:center;justify-content:center;font-size:36px}
-
-.infobox{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:14px 18px;margin-bottom:22px;text-align:left;display:flex;flex-direction:column;gap:9px;width:100%;max-width:310px}
-.ir{display:flex;gap:11px;align-items:flex-start}
-.ii{font-size:16px;flex-shrink:0;margin-top:1px}
-.it{font-size:12px;color:var(–t2);line-height:1.5}
-.it strong{color:var(–t);display:block}
-
-.sbtn{
-width:100%;max-width:310px;height:52px;border-radius:16px;border:none;
-background:linear-gradient(135deg,var(–p),var(–c));color:#fff;
-font-family:‘DM Sans’,sans-serif;font-size:15px;font-weight:700;
-cursor:pointer;box-shadow:0 8px 36px rgba(0,229,255,.22);transition:transform .15s;
+/* KEY FIX: no object-fit, explicit 100vw/100vh, translateZ forces GPU layer */
+video {
+  width:100vw;
+  height:100vh;
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  background:#000;
 }
-.sbtn:active{transform:scale(.97)}
-
-/* ── SCANNER ── */
-#scanner{background:#000;position:relative}
-
-/* VIDEO — real DOM element, fills screen */
-#vid{
-position:absolute;inset:0;
-width:100%;height:100%;
-object-fit:cover;
-z-index:1;
-/* iOS needs these */
--webkit-transform:translateZ(0);
-transform:translateZ(0);
+#ui {
+  position:fixed; bottom:40px; left:0; right:0;
+  text-align:center; display:none;
 }
-
-/* CANVAS — purely for drawing HUD/effects on top, NO video drawing */
-#fx{
-position:absolute;inset:0;
-width:100%;height:100%;
-z-index:2;
-pointer-events:none;
+#ui p { font-size:14px; color:#0ff; margin-bottom:8px; }
+#ui small { font-size:11px; color:#666; }
+#startBtn {
+  position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+  padding:18px 44px; border-radius:16px; border:none;
+  background:#00e5ff; color:#000;
+  font-size:17px; font-weight:700; cursor:pointer;
+  box-shadow:0 8px 30px rgba(0,229,255,.4);
 }
-
-/* CSS filter overlay — simulates depth/thermal on the video element itself */
-#vid.scanning{
-animation:thermalPulse 0.08s steps(1) infinite;
+#err {
+  position:fixed; inset:0; display:none;
+  flex-direction:column; align-items:center; justify-content:center;
+  padding:30px; text-align:center; gap:10px;
 }
-/* We use CSS filter + mix-blend for thermal effect on video */
-#thermalOverlay{
-position:absolute;inset:0;
-z-index:2;
-pointer-events:none;
-opacity:0;
-transition:opacity 0.5s;
-mix-blend-mode:color;
-background:transparent;
-}
-#thermalOverlay.show{opacity:1}
-
-/* Colour-shift overlay — animates hue during scan */
-#colorShift{
-position:absolute;inset:0;
-z-index:2;
-pointer-events:none;
-opacity:0;
-transition:opacity 1s;
-background:linear-gradient(180deg,
-rgba(255,0,0,.18) 0%,
-rgba(255,140,0,.15) 20%,
-rgba(0,255,120,.12) 45%,
-rgba(0,180,255,.15) 70%,
-rgba(0,0,255,.18) 100%
-);
-mix-blend-mode:screen;
-}
-#colorShift.show{opacity:1}
-
-/* Grid overlay */
-#gridOverlay{
-position:absolute;inset:0;z-index:2;pointer-events:none;opacity:0;transition:opacity 1s;
-background-image:linear-gradient(rgba(0,229,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,.04) 1px,transparent 1px);
-background-size:22px 22px;
-}
-#gridOverlay.show{opacity:1}
-
-/* ── HUD top ── */
-.htop{
-position:absolute;top:0;left:0;right:0;padding:50px 16px 14px;
-background:linear-gradient(to bottom,rgba(0,0,0,.72),transparent);
-display:flex;align-items:center;gap:10px;z-index:10;pointer-events:none;
-}
-.htop>*{pointer-events:all}
-.bk{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff;font-size:18px;flex-shrink:0}
-.bk:active{background:rgba(255,255,255,.22)}
-.htitle{font-family:‘Bebas Neue’,sans-serif;font-size:22px;letter-spacing:3px;background:linear-gradient(135deg,var(–c),#fff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.badge{margin-left:auto;background:rgba(0,229,255,.12);border:1px solid rgba(0,229,255,.3);border-radius:20px;padding:4px 10px;font-size:10px;font-weight:700;color:var(–c);text-transform:uppercase;letter-spacing:1.5px;display:flex;align-items:center;gap:5px}
-.bdot{width:6px;height:6px;border-radius:50%;background:var(–c);animation:bd 1.2s ease-in-out infinite}
-@keyframes bd{0%,100%{opacity:1}50%{opacity:.15}}
-
-/* ── HUD bottom ── */
-.hbot{
-position:absolute;bottom:0;left:0;right:0;padding:14px 16px 34px;
-background:linear-gradient(to top,rgba(0,0,0,.88),transparent);
-z-index:10;
-}
-.tabs{display:flex;gap:8px;margin-bottom:12px}
-.tab{flex:1;height:34px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);color:var(–t2);font-family:‘DM Sans’,sans-serif;font-size:11px;font-weight:600;cursor:pointer;text-transform:uppercase;letter-spacing:1px;transition:all .2s}
-.tab.on{background:rgba(0,229,255,.12);border-color:rgba(0,229,255,.35);color:var(–c)}
-.prow{display:flex;justify-content:space-between;margin-bottom:5px}
-.plbl{font-size:12px;font-weight:600;color:var(–t)}
-.ppct{font-size:12px;font-weight:700;color:var(–c)}
-.ptrack{height:3px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden;margin-bottom:12px}
-.pfill{height:100%;background:linear-gradient(90deg,var(–p),var(–c));border-radius:2px;width:0%;transition:width .3s;box-shadow:0 0 8px var(–c)}
-.sbtn2{width:100%;height:52px;border-radius:15px;border:none;font-family:‘DM Sans’,sans-serif;font-size:15px;font-weight:700;cursor:pointer;transition:all .2s;background:linear-gradient(135deg,var(–p),var(–c));color:#fff;box-shadow:0 6px 26px rgba(0,229,255,.2)}
-.sbtn2:active{transform:scale(.98)}
-.sbtn2.done{background:linear-gradient(135deg,#059669,var(–g));box-shadow:0 6px 26px rgba(34,197,94,.3)}
-.sbtn2:disabled{opacity:.4;cursor:not-allowed}
-
-/* ── Done overlay ── */
-.dov{position:absolute;inset:0;z-index:20;background:rgba(0,0,0,.8);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:13px;opacity:0;pointer-events:none;transition:opacity .4s}
-.dov.show{opacity:1;pointer-events:all}
-.oring{width:76px;height:76px;border-radius:50%;background:linear-gradient(135deg,#059669,var(–g));display:flex;align-items:center;justify-content:center;font-size:30px;box-shadow:0 0 48px rgba(34,197,94,.5);animation:pop .5s cubic-bezier(.34,1.56,.64,1) both}
-@keyframes pop{from{transform:scale(0)}to{transform:scale(1)}}
-.otit{font-size:21px;font-weight:700}
-.osub{font-size:13px;color:var(–t2);text-align:center;padding:0 28px}
-.onxt{margin-top:6px;padding:13px 34px;border-radius:13px;border:none;background:linear-gradient(135deg,var(–p),var(–c));color:#fff;font-family:‘DM Sans’,sans-serif;font-size:14px;font-weight:700;cursor:pointer}
-
-/* ── RESULTS ── */
-#results{background:#07070f;overflow-y:auto}
-.rh{display:flex;align-items:center;gap:12px;padding:50px 20px 10px;flex-shrink:0}
-.rtit{font-family:‘Bebas Neue’,sans-serif;font-size:24px;letter-spacing:3px}
-.ms{display:flex;gap:8px;padding:0 20px 12px;flex-shrink:0}
-.mb{flex:1;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:9px 6px;text-align:center}
-.mv{font-size:15px;font-weight:700}
-.ml{font-size:9px;color:var(–t2);text-transform:uppercase;letter-spacing:.7px;margin-top:2px}
-.sc{margin:0 20px 10px;background:linear-gradient(135deg,#0d1f3c,#0a1020);border:1px solid rgba(0,229,255,.18);border-radius:18px;padding:16px;position:relative;overflow:hidden}
-.sc::after{content:’’;position:absolute;top:-28px;right:-28px;width:90px;height:90px;background:var(–c);border-radius:50%;filter:blur(38px);opacity:.07}
-.scr{display:flex;align-items:center;gap:12px;margin-bottom:12px}
-.srng{width:64px;height:64px;border-radius:50%;flex-shrink:0;background:conic-gradient(var(–c) 324deg,rgba(255,255,255,.05) 0);display:flex;align-items:center;justify-content:center;position:relative}
-.srng::before{content:’’;position:absolute;inset:5px;background:#0d1f3c;border-radius:50%}
-.snum{position:relative;font-size:17px;font-weight:800;color:var(–c)}
-.sn{font-size:17px;font-weight:700}
-.sb{font-size:11px;color:var(–t2)}
-.ss{font-size:10px;color:var(–c);margin-top:2px;font-weight:600}
-.fbs{display:flex;flex-direction:column;gap:6px}
-.fbr{display:flex;align-items:center;gap:8px}
-.fbl{font-size:11px;color:var(–t2);width:52px;flex-shrink:0}
-.fbt{flex:1;height:4px;background:rgba(255,255,255,.07);border-radius:2px;overflow:hidden}
-.fbf{height:100%;border-radius:2px;background:linear-gradient(90deg,var(–p),var(–c))}
-.fbv{font-size:11px;font-weight:700;width:26px;text-align:right}
-.sl{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(–t2);font-weight:600;padding:4px 20px 7px}
-.shl{padding:0 20px;display:flex;flex-direction:column;gap:8px;padding-bottom:30px}
-.sr{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:13px;padding:11px 13px;display:flex;align-items:center;gap:11px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
-.sr.top{border-color:rgba(0,229,255,.25);background:linear-gradient(135deg,#0d1f3c,#0a1020)}
-.sr:active{transform:scale(.98)}
-.si{width:48px;height:48px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
-.s1{background:rgba(0,229,255,.08)}.s2{background:rgba(124,58,237,.1)}.s3{background:rgba(245,158,11,.1)}.s4{background:rgba(239,68,68,.08)}
-.sif{flex:1;min-width:0}
-.sn2{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.sb2{font-size:11px;color:var(–t2)}
-.st2{display:flex;gap:4px;margin-top:3px;flex-wrap:wrap}
-.tg{font-size:9px;font-weight:600;padding:2px 6px;border-radius:9px;text-transform:uppercase;letter-spacing:.5px}
-.tg.s{background:rgba(0,229,255,.1);color:var(–c)}.tg.f{background:rgba(34,197,94,.1);color:var(–g)}.tg.b{background:rgba(255,255,255,.06);color:var(–t2)}
-.sp{font-size:13px;font-weight:800;background:rgba(255,255,255,.07);border-radius:8px;padding:4px 8px;flex-shrink:0}
-.tp{position:absolute;top:8px;right:8px;background:linear-gradient(135deg,var(–p),var(–c));color:#fff;font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1px;padding:2px 7px;border-radius:18px}
+#err h2 { color:#f44; font-size:20px; }
+#err p { font-size:13px; color:#aaa; line-height:1.7; }
 </style>
-
 </head>
 <body>
 
-<!-- SPLASH -->
-
-<div id="splash" class="screen active">
-  <div class="logo">FOOTSCAN</div>
-  <div class="tagline">LiDAR · AI · Perfect Fit</div>
-  <div class="rings">
-    <div class="ring"></div><div class="ring"></div><div class="ring"></div>
-    <div class="rc">🦶</div>
-  </div>
-  <div class="infobox">
-    <div class="ir"><div class="ii">📷</div><div class="it"><strong>Živá kamera</strong>Skutočný video feed — zadná kamera iPhone.</div></div>
-    <div class="ir"><div class="ii">🌈</div><div class="it"><strong>Depth simulácia</strong>Termálny overlay + point cloud v reálnom čase.</div></div>
-    <div class="ir"><div class="ii">🔒</div><div class="it"><strong>100% lokálne</strong>Žiadne dáta sa neodosielajú.</div></div>
-  </div>
-  <button class="sbtn" onclick="startApp()">Povoliť kameru & spustiť</button>
+<div id="wrap">
+  <video id="vid" autoplay playsinline muted></video>
 </div>
 
-<!-- SCANNER -->
+<button id="startBtn" onclick="go()">📷 Spustiť kameru</button>
 
-<div id="scanner" class="screen">
-  <!-- VIDEO as real DOM element — iOS renders this fine -->
-  <video id="vid" autoplay playsinline muted webkit-playsinline></video>
-
-  <!-- Colour/thermal overlays via CSS (no canvas pixel ops needed) -->
-
-  <div id="colorShift"></div>
-  <div id="gridOverlay"></div>
-
-  <!-- HUD canvas — only draws brackets, scan line, badges (no video pixels) -->
-
-<canvas id="fx"></canvas>
-
-  <div class="htop">
-    <div class="bk" onclick="stopAll()">←</div>
-    <div class="htitle">FOOTSCAN</div>
-    <div class="badge"><div class="bdot"></div>DEPTH SIM</div>
-  </div>
-
-  <div class="hbot">
-    <div class="tabs">
-      <button class="tab on" id="tFoot" onclick="setMode('foot')">🦶 Noha</button>
-      <button class="tab"    id="tShoe" onclick="setMode('shoe')">👟 Topánka</button>
-    </div>
-    <div class="prow">
-      <span class="plbl" id="plbl">Inicializujem…</span>
-      <span class="ppct" id="ppct">0%</span>
-    </div>
-    <div class="ptrack"><div class="pfill" id="pfill"></div></div>
-    <button class="sbtn2" id="sbtn" disabled onclick="startScan()">Čakám na kameru…</button>
-  </div>
-
-  <div class="dov" id="dov">
-    <div class="oring">✓</div>
-    <div class="otit" id="dtit">Hotovo!</div>
-    <div class="osub" id="dsub"></div>
-    <button class="onxt" id="dnxt">Ďalej →</button>
-  </div>
+<div id="ui">
+  <p id="status">✅ Kamera funguje!</p>
+  <small id="res"></small>
 </div>
 
-<!-- RESULTS -->
-
-<div id="results" class="screen">
-  <div class="rh">
-    <div class="bk" onclick="goTo('scanner');reset()">←</div>
-    <div class="rtit">FIT ANALÝZA</div>
-  </div>
-  <div class="ms">
-    <div class="mb"><div class="mv" style="color:var(--c)">26.3<small style="font-size:9px">cm</small></div><div class="ml">Dĺžka</div></div>
-    <div class="mb"><div class="mv" style="color:var(--c)">9.8<small style="font-size:9px">cm</small></div><div class="ml">Šírka</div></div>
-    <div class="mb"><div class="mv" style="color:#a78bfa">EU 41</div><div class="ml">Veľkosť</div></div>
-    <div class="mb"><div class="mv" style="font-size:11px;color:#fbbf24">Stredná</div><div class="ml">Klenba</div></div>
-  </div>
-  <div class="sc">
-    <div style="font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--t2);margin-bottom:10px;font-weight:600">⭐ Najlepší match</div>
-    <div class="scr">
-      <div class="srng"><div class="snum">90%</div></div>
-      <div><div class="sn">Air Max 90 GTX</div><div class="sb">Nike · Bežecká · Outdoor</div><div class="ss">Odporúčaná veľkosť: EU 41</div></div>
-    </div>
-    <div class="fbs">
-      <div class="fbr"><div class="fbl">Dĺžka</div><div class="fbt"><div class="fbf" style="width:94%"></div></div><div class="fbv">94%</div></div>
-      <div class="fbr"><div class="fbl">Šírka</div><div class="fbt"><div class="fbf" style="width:88%"></div></div><div class="fbv">88%</div></div>
-      <div class="fbr"><div class="fbl">Klenba</div><div class="fbt"><div class="fbf" style="width:82%"></div></div><div class="fbv">82%</div></div>
-      <div class="fbr"><div class="fbl">Objem</div><div class="fbt"><div class="fbf" style="width:91%"></div></div><div class="fbv">91%</div></div>
-    </div>
-  </div>
-  <div class="sl">Ďalšie odporúčania</div>
-  <div class="shl">
-    <div class="sr top"><div class="tp">TOP</div><div class="si s1">👟</div><div class="sif"><div class="sn2">Air Max 90 GTX</div><div class="sb2">Nike · €149.99</div><div class="st2"><span class="tg s">EU 41</span><span class="tg f">Ideálny fit</span><span class="tg b">Nike</span></div></div><div class="sp">90%</div></div>
-    <div class="sr"><div class="si s2">👞</div><div class="sif"><div class="sn2">Ultraboost 22</div><div class="sb2">Adidas · €179.00</div><div class="st2"><span class="tg s">EU 41</span><span class="tg f">Dobrý fit</span><span class="tg b">Adidas</span></div></div><div class="sp">84%</div></div>
-    <div class="sr"><div class="si s3">🥾</div><div class="sif"><div class="sn2">Fresh Foam X 1080</div><div class="sb2">New Balance · €164.95</div><div class="st2"><span class="tg s">EU 41.5</span><span class="tg f">Dobrý fit</span><span class="tg b">NB</span></div></div><div class="sp">79%</div></div>
-    <div class="sr"><div class="si s4">🏃</div><div class="sif"><div class="sn2">Gel-Kayano 30</div><div class="sb2">ASICS · €189.00</div><div class="st2"><span class="tg s">EU 41</span><span class="tg b">ASICS</span></div></div><div class="sp">74%</div></div>
-  </div>
+<div id="err">
+  <h2>❌ Chyba</h2>
+  <p id="errMsg"></p>
 </div>
 
 <script>
-const vid = document.getElementById('vid');
-const fx  = document.getElementById('fx');
-const ctx = fx.getContext('2d');
+async function go() {
+  document.getElementById('startBtn').style.display = 'none';
 
-let stream, rafId, appT=0, lastTS=null;
-let scanning=false, done=false, prog=0, scanLineY=0, scanTimer=null;
-let mode='foot';
+  const vid = document.getElementById('vid');
 
-// ── nav ──
-function goTo(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
-function stopAll(){ if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;} cancelAnimationFrame(rafId); goTo('splash'); }
-
-// ── start ──
-async function startApp(){
-  goTo('scanner');
-  fx.width  = window.innerWidth;
-  fx.height = window.innerHeight;
-  window.addEventListener('resize',()=>{ fx.width=window.innerWidth; fx.height=window.innerHeight; });
-
-  try{
-    stream = await navigator.mediaDevices.getUserMedia({
-      video:{ facingMode:{ideal:'environment'}, width:{ideal:1280}, height:{ideal:720} },
-      audio:false
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' } },
+      audio: false
     });
+
     vid.srcObject = stream;
-    vid.onloadedmetadata = ()=>{
-      vid.play().then(()=>{ ready(false); }).catch(()=>{ ready(false); });
-    };
-  } catch(e){ ready(true); }
-}
+    vid.muted = true;
+    vid.playsInline = true;
 
-function ready(demo){
-  cancelAnimationFrame(rafId); lastTS=null;
-  rafId = requestAnimationFrame(loop);
-  const b=document.getElementById('sbtn');
-  b.disabled=false;
-  b.textContent = mode==='foot'?'🦶 Skenovať nohu':'👟 Skenovať topánku';
-  document.getElementById('plbl').textContent = demo?'Demo — kamera nedostupná':(mode==='foot'?'Umiestni nohu do rámu':'Umiestni topánku do rámu');
-}
-
-// ── render loop — only HUD on canvas, NO video drawing ──
-function loop(ts){
-  rafId=requestAnimationFrame(loop);
-  if(!lastTS) lastTS=ts;
-  const dt=Math.min((ts-lastTS)/1000,.05); lastTS=ts; appT+=dt;
-  const W=fx.width, H=fx.height;
-  ctx.clearRect(0,0,W,H);
-
-  if(scanning){ scanLineY=(scanLineY+dt*.5)%1; drawScanLine(W,H); }
-  drawHUD(W,H);
-}
-
-// ── scan line on canvas ──
-function drawScanLine(W,H){
-  const y=scanLineY*H;
-  ctx.save();
-  ctx.globalCompositeOperation='source-over';
-  const lg=ctx.createLinearGradient(0,0,W,0);
-  lg.addColorStop(0,'transparent'); lg.addColorStop(.15,'rgba(0,229,255,.9)');
-  lg.addColorStop(.85,'rgba(0,229,255,.9)'); lg.addColorStop(1,'transparent');
-  ctx.fillStyle=lg; ctx.fillRect(0,y-1,W,3);
-  const gg=ctx.createLinearGradient(0,0,W,0);
-  gg.addColorStop(0,'transparent'); gg.addColorStop(.15,'rgba(0,200,255,.12)');
-  gg.addColorStop(.85,'rgba(0,200,255,.12)'); gg.addColorStop(1,'transparent');
-  ctx.fillStyle=gg; ctx.fillRect(0,y-16,W,32);
-  ctx.restore();
-}
-
-// ── HUD on canvas ──
-function drawHUD(W,H){
-  const cx=W/2, cy=H*.44, bw=W*.35, bh=H*.23, arm=26;
-  const pulse=.5+.5*Math.sin(appT*2);
-  const col= done?'rgba(34,197,94,.95)': scanning?`rgba(0,229,255,${.6+.35*pulse})`:`rgba(0,229,255,${.25+.2*pulse})`;
-
-  // brackets
-  ctx.save(); ctx.strokeStyle=col; ctx.lineWidth=2.5; ctx.lineCap='round';
-  [[cx-bw,cy-bh,1,1],[cx+bw,cy-bh,-1,1],[cx-bw,cy+bh,1,-1],[cx+bw,cy+bh,-1,-1]].forEach(([x,y,dx,dy])=>{
-    ctx.beginPath(); ctx.moveTo(x+dx*arm,y); ctx.lineTo(x,y); ctx.lineTo(x,y+dy*arm); ctx.stroke();
-  });
-
-  // crosshair
-  ctx.strokeStyle='rgba(0,229,255,.2)'; ctx.lineWidth=1;
-  ctx.beginPath(); ctx.moveTo(cx,cy-7); ctx.lineTo(cx,cy+7); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(cx-7,cy); ctx.lineTo(cx+7,cy); ctx.stroke();
-  ctx.restore();
-
-  // point cloud
-  if(scanning||done){
-    const n=Math.floor(prog*150);
-    for(let i=0;i<n;i++){
-      const px=cx+(s(i*127.1)-.5)*bw*2.3;
-      const py=cy+(s(i*311.7)-.5)*bh*2.3;
-      const fl=.2+.8*Math.abs(Math.sin(appT*3.5+i));
-      ctx.beginPath(); ctx.arc(px,py,1.6,0,Math.PI*2);
-      ctx.fillStyle=`hsla(${175+s(i*71)*90},100%,68%,${fl*.7})`; ctx.fill();
+    // iOS Safari sometimes needs manual play after srcObject set
+    const playPromise = vid.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(() => {
+        // retry once
+        setTimeout(() => vid.play(), 200);
+      });
     }
+
+    // Force repaint after short delay — fixes iOS black screen bug
+    setTimeout(() => {
+      vid.style.opacity = '0.99';
+      setTimeout(() => { vid.style.opacity = '1'; }, 50);
+    }, 300);
+
+    setTimeout(() => {
+      const ui = document.getElementById('ui');
+      ui.style.display = 'block';
+      document.getElementById('res').textContent =
+        vid.videoWidth + '×' + vid.videoHeight + ' — ' + (vid.paused ? 'PAUSED ⚠️' : 'Playing ✅');
+    }, 1500);
+
+  } catch(e) {
+    const ed = document.getElementById('err');
+    ed.style.display = 'flex';
+    document.getElementById('errMsg').innerHTML =
+      '<b>' + e.name + '</b><br>' + e.message + '<br><br>' +
+      'Skontroluj:<br>' +
+      '• Nastavenia → Safari → Kamera → Povoliť<br>' +
+      '• Nie si v anonymnom okne<br>' +
+      '• Stránka je cez HTTPS';
   }
-
-  // badges
-  if(prog>.38) bdg(cx-bw-6, cy-18,  '26.3 cm  Dĺžka', W,H);
-  if(prog>.58) bdg(cx+bw-112,cy+22, '9.8 cm  Šírka',  W,H);
-  if(prog>.78) bdg(cx-52,  cy+bh+11,'EU 41  Veľkosť', W,H);
-
-  // depth legend
-  if(prog>.15) legend(W,H);
-}
-
-function s(x){ return Math.abs(Math.sin(x)*43758.5)%1; }
-
-function bdg(x,y,txt,W,H){
-  x=Math.max(5,Math.min(W-120,x)); y=Math.max(72,Math.min(H-142,y));
-  ctx.save();
-  ctx.fillStyle='rgba(0,0,0,.7)'; rr(x,y,117,26,7); ctx.fill();
-  ctx.strokeStyle='rgba(0,229,255,.4)'; ctx.lineWidth=1; rr(x,y,117,26,7); ctx.stroke();
-  ctx.beginPath(); ctx.arc(x+10,y+13,3,0,Math.PI*2); ctx.fillStyle='rgba(0,229,255,.95)'; ctx.fill();
-  ctx.font='bold 11px DM Sans,sans-serif'; ctx.fillStyle='rgba(0,229,255,1)';
-  ctx.fillText(txt,x+18,y+17); ctx.restore();
-}
-
-function legend(W,H){
-  const x=W-21, y=H*.37, h=H*.25;
-  ctx.save();
-  const g=ctx.createLinearGradient(0,y,0,y+h);
-  g.addColorStop(0,'#ff1111'); g.addColorStop(.3,'#ff8800');
-  g.addColorStop(.5,'#00ff88'); g.addColorStop(.7,'#00aaff'); g.addColorStop(1,'#0011ff');
-  ctx.fillStyle=g; rr(x,y,10,h,5); ctx.fill();
-  ctx.strokeStyle='rgba(255,255,255,.12)'; ctx.lineWidth=1; rr(x,y,10,h,5); ctx.stroke();
-  ctx.font='8px DM Sans,sans-serif'; ctx.fillStyle='rgba(255,255,255,.4)';
-  ctx.fillText('Blíz',x-14,y+9); ctx.fillText('Ďal',x-12,y+h+2); ctx.restore();
-}
-
-function rr(x,y,w,h,r){
-  ctx.beginPath(); ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.arcTo(x+w,y,x+w,y+r,r);
-  ctx.lineTo(x+w,y+h-r); ctx.arcTo(x+w,y+h,x+w-r,y+h,r);
-  ctx.lineTo(x+r,y+h); ctx.arcTo(x,y+h,x,y+h-r,r);
-  ctx.lineTo(x,y+r); ctx.arcTo(x,y,x+r,y,r); ctx.closePath();
-}
-
-// ── modes ──
-const conf={
-  foot:{steps:['Detegujem povrch…','Mapujem kontúry…','Meriam dĺžku…','Meriam šírku…','Analyzujem klenbu…','Generujem 3D model…','Finalizujem…'],okTitle:'Noha naskenovaná!',okSub:'3D model bol vytvorený',nextLbl:'👟 Skenovať topánku',next:()=>setMode('shoe')},
-  shoe:{steps:['Detegujem topánku…','Meriam vnútro…','Hĺbka stielky…','Šírka špice…','Matchujem profily…','Počítam fit score…','Hotovo!'],okTitle:'Topánka naskenovaná!',okSub:'Spúšťam matching…',nextLbl:'📊 Výsledky',next:()=>goTo('results')}
-};
-
-function setMode(m){
-  mode=m;
-  document.getElementById('tFoot').classList.toggle('on',m==='foot');
-  document.getElementById('tShoe').classList.toggle('on',m==='shoe');
-  reset();
-}
-
-function reset(){
-  scanning=false; done=false; prog=0; scanLineY=0;
-  clearInterval(scanTimer);
-  document.getElementById('pfill').style.width='0%';
-  document.getElementById('ppct').textContent='0%';
-  document.getElementById('plbl').textContent=mode==='foot'?'Umiestni nohu do rámu':'Umiestni topánku do rámu';
-  const b=document.getElementById('sbtn');
-  b.className='sbtn2'; b.disabled=false;
-  b.textContent=mode==='foot'?'🦶 Skenovať nohu':'👟 Skenovať topánku';
-  b.onclick=startScan;
-  document.getElementById('dov').classList.remove('show');
-  // reset CSS overlays
-  document.getElementById('colorShift').classList.remove('show');
-  document.getElementById('gridOverlay').classList.remove('show');
-}
-
-function startScan(){
-  if(scanning) return;
-  scanning=true; prog=0;
-  document.getElementById('sbtn').disabled=true;
-  document.getElementById('sbtn').textContent='Skenujem…';
-  // activate CSS depth overlays
-  document.getElementById('gridOverlay').classList.add('show');
-
-  const c=conf[mode];
-  scanTimer=setInterval(()=>{
-    prog=Math.min(prog+(Math.random()*.028+.013),1);
-
-    // ramp in colour shift overlay
-    const cs=document.getElementById('colorShift');
-    cs.style.opacity = Math.min(prog*1.4,.75);
-    cs.classList.add('show');
-
-    const pct=Math.round(prog*100);
-    document.getElementById('pfill').style.width=pct+'%';
-    document.getElementById('ppct').textContent=pct+'%';
-    document.getElementById('plbl').textContent=c.steps[Math.min(Math.floor(prog*c.steps.length),c.steps.length-1)];
-
-    if(prog>=1){
-      clearInterval(scanTimer);
-      scanning=false; done=true;
-      setTimeout(()=>{
-        document.getElementById('dtit').textContent=c.okTitle;
-        document.getElementById('dsub').textContent=c.okSub;
-        const nx=document.getElementById('dnxt');
-        nx.textContent=c.nextLbl;
-        nx.onclick=()=>{ document.getElementById('dov').classList.remove('show'); c.next(); };
-        document.getElementById('dov').classList.add('show');
-        document.getElementById('sbtn').className='sbtn2 done';
-        document.getElementById('sbtn').textContent='✓ Hotovo';
-      },300);
-    }
-  },130);
 }
 </script>
 
