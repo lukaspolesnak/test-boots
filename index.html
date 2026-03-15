@@ -1,120 +1,684 @@
 <!DOCTYPE html>
 
-<html>
+<html lang="sk">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>FootScan</title>
+<title>FootScan LiDAR</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-* { margin:0; padding:0; box-sizing:border-box; }
-html, body {
-  width:100%; height:100%;
-  background:#000;
-  font-family:sans-serif;
-  color:#fff;
-  overflow:hidden;
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{--c:#00e5ff;--p:#7c3aed;--g:#22c55e;--t:#f0f0f8;--t2:#8888aa}
+html,body{width:100%;height:100%;background:#000;font-family:'DM Sans',sans-serif;overflow:hidden;color:var(--t)}
+.screen{position:absolute;inset:0;display:none;flex-direction:column}
+.screen.active{display:flex}
+
+/* ── SPLASH ── */
+#splash{
+background:radial-gradient(ellipse at 55% 38%,#0d1f3c,#07070f 68%);
+align-items:center;justify-content:center;padding:40px 28px;text-align:center;
 }
-#wrap {
-  position:fixed; inset:0;
-  display:flex; align-items:center; justify-content:center;
-  background:#000;
+.logo{font-family:‘Bebas Neue’,sans-serif;font-size:54px;letter-spacing:7px;background:linear-gradient(135deg,var(–c),var(–p));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px;animation:lp 3s ease-in-out infinite}
+@keyframes lp{0%,100%{filter:drop-shadow(0 0 16px rgba(0,229,255,.3))}50%{filter:drop-shadow(0 0 36px rgba(0,229,255,.7))}}
+.tagline{font-size:12px;color:var(–t2);letter-spacing:3px;text-transform:uppercase;margin-bottom:40px}
+.rings{position:relative;width:148px;height:148px;margin:0 auto 40px}
+.ring{position:absolute;inset:0;border-radius:50%;border:1px solid rgba(0,229,255,.2);animation:re 3s ease-out infinite}
+.ring:nth-child(2){animation-delay:.8s}.ring:nth-child(3){animation-delay:1.6s}
+@keyframes re{0%{transform:scale(.1);opacity:.9}100%{transform:scale(1.8);opacity:0}}
+.rc{position:absolute;inset:26px;border-radius:50%;background:rgba(0,229,255,.06);border:1.5px solid rgba(0,229,255,.4);display:flex;align-items:center;justify-content:center;font-size:36px}
+.infobox{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:14px 18px;margin-bottom:22px;text-align:left;display:flex;flex-direction:column;gap:9px;width:100%;max-width:310px}
+.ir{display:flex;gap:11px;align-items:flex-start}
+.ii{font-size:16px;flex-shrink:0;margin-top:1px}
+.it{font-size:12px;color:var(–t2);line-height:1.5}
+.it strong{color:var(–t);display:block}
+.sbtn{width:100%;max-width:310px;height:52px;border-radius:16px;border:none;background:linear-gradient(135deg,var(–p),var(–c));color:#fff;font-family:‘DM Sans’,sans-serif;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 8px 36px rgba(0,229,255,.22);transition:transform .15s}
+.sbtn:active{transform:scale(.97)}
+
+/* ── SCANNER ── */
+#scanner{background:#000;position:relative}
+
+/* VIDEO - iOS proven approach */
+#vid{
+position:absolute;inset:0;
+width:100vw;height:100vh;
+-webkit-transform:translateZ(0);
+transform:translateZ(0);
+background:#000;
+z-index:1;
 }
-/* KEY FIX: no object-fit, explicit 100vw/100vh, translateZ forces GPU layer */
-video {
-  width:100vw;
-  height:100vh;
-  -webkit-transform: translateZ(0);
-  transform: translateZ(0);
-  background:#000;
+
+/* CSS thermal overlay — no canvas pixel ops */
+#thermal{
+position:absolute;inset:0;z-index:2;pointer-events:none;
+opacity:0;transition:opacity 1.2s ease;
+background:linear-gradient(180deg,
+rgba(255,20,20,.22)   0%,
+rgba(255,120,0,.18)  18%,
+rgba(255,220,0,.14)  36%,
+rgba(0,255,100,.12)  54%,
+rgba(0,160,255,.16)  72%,
+rgba(30,0,255,.20)  100%
+);
+mix-blend-mode:screen;
 }
-#ui {
-  position:fixed; bottom:40px; left:0; right:0;
-  text-align:center; display:none;
+#grid{
+position:absolute;inset:0;z-index:2;pointer-events:none;
+opacity:0;transition:opacity 1s;
+background-image:linear-gradient(rgba(0,229,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,.05) 1px,transparent 1px);
+background-size:20px 20px;
 }
-#ui p { font-size:14px; color:#0ff; margin-bottom:8px; }
-#ui small { font-size:11px; color:#666; }
-#startBtn {
-  position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
-  padding:18px 44px; border-radius:16px; border:none;
-  background:#00e5ff; color:#000;
-  font-size:17px; font-weight:700; cursor:pointer;
-  box-shadow:0 8px 30px rgba(0,229,255,.4);
+
+/* HUD canvas — brackets, scanline, badges only */
+#hud{position:absolute;inset:0;z-index:3;pointer-events:none}
+
+/* Top bar */
+.htop{position:absolute;top:0;left:0;right:0;padding:50px 16px 14px;background:linear-gradient(to bottom,rgba(0,0,0,.75),transparent);display:flex;align-items:center;gap:10px;z-index:10;pointer-events:none}
+.htop>*{pointer-events:all}
+.bk{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff;font-size:18px}
+.bk:active{background:rgba(255,255,255,.2)}
+.htitle{font-family:‘Bebas Neue’,sans-serif;font-size:22px;letter-spacing:3px;background:linear-gradient(135deg,var(–c),#fff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.badge{margin-left:auto;background:rgba(0,229,255,.12);border:1px solid rgba(0,229,255,.3);border-radius:20px;padding:4px 10px;font-size:10px;font-weight:700;color:var(–c);text-transform:uppercase;letter-spacing:1.5px;display:flex;align-items:center;gap:5px}
+.bdot{width:6px;height:6px;border-radius:50%;background:var(–c);animation:bd 1.2s ease-in-out infinite}
+@keyframes bd{0%,100%{opacity:1}50%{opacity:.15}}
+
+/* Bottom bar */
+.hbot{position:absolute;bottom:0;left:0;right:0;padding:14px 16px 38px;background:linear-gradient(to top,rgba(0,0,0,.9),transparent);z-index:10}
+.tabs{display:flex;gap:8px;margin-bottom:12px}
+.tab{flex:1;height:34px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);color:var(–t2);font-family:‘DM Sans’,sans-serif;font-size:11px;font-weight:600;cursor:pointer;text-transform:uppercase;letter-spacing:1px;transition:all .2s}
+.tab.on{background:rgba(0,229,255,.12);border-color:rgba(0,229,255,.35);color:var(–c)}
+.prow{display:flex;justify-content:space-between;margin-bottom:5px}
+.plbl{font-size:12px;font-weight:600;color:var(–t)}
+.ppct{font-size:12px;font-weight:700;color:var(–c)}
+.ptrack{height:3px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden;margin-bottom:12px}
+.pfill{height:100%;background:linear-gradient(90deg,var(–p),var(–c));border-radius:2px;width:0%;transition:width .3s;box-shadow:0 0 8px var(–c)}
+.abtn{width:100%;height:52px;border-radius:15px;border:none;font-family:‘DM Sans’,sans-serif;font-size:15px;font-weight:700;cursor:pointer;transition:all .2s;background:linear-gradient(135deg,var(–p),var(–c));color:#fff;box-shadow:0 6px 26px rgba(0,229,255,.2)}
+.abtn:active{transform:scale(.98)}
+.abtn.done{background:linear-gradient(135deg,#059669,var(–g));box-shadow:0 6px 26px rgba(34,197,94,.3)}
+.abtn:disabled{opacity:.4;cursor:not-allowed}
+
+/* Done overlay */
+.dov{position:absolute;inset:0;z-index:20;background:rgba(0,0,0,.82);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:13px;opacity:0;pointer-events:none;transition:opacity .4s}
+.dov.show{opacity:1;pointer-events:all}
+.oring{width:76px;height:76px;border-radius:50%;background:linear-gradient(135deg,#059669,var(–g));display:flex;align-items:center;justify-content:center;font-size:30px;box-shadow:0 0 48px rgba(34,197,94,.5);animation:pop .5s cubic-bezier(.34,1.56,.64,1) both}
+@keyframes pop{from{transform:scale(0)}to{transform:scale(1)}}
+.otit{font-size:21px;font-weight:700}
+.osub{font-size:13px;color:var(–t2);text-align:center;padding:0 28px}
+.onxt{margin-top:6px;padding:13px 34px;border-radius:13px;border:none;background:linear-gradient(135deg,var(–p),var(–c));color:#fff;font-family:‘DM Sans’,sans-serif;font-size:14px;font-weight:700;cursor:pointer}
+
+/* ── 3D MODEL SCREEN ── */
+#model3d{background:#07070f;position:relative;overflow:hidden}
+.m3top{position:absolute;top:0;left:0;right:0;padding:50px 16px 14px;background:linear-gradient(to bottom,rgba(0,0,0,.8),transparent);display:flex;align-items:center;gap:10px;z-index:10}
+.m3title{font-family:‘Bebas Neue’,sans-serif;font-size:22px;letter-spacing:3px;background:linear-gradient(135deg,var(–c),#fff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+
+/* Three.js canvas fills screen */
+#threeCanvas{position:absolute;inset:0;width:100%!important;height:100%!important;z-index:1}
+
+/* Measurements panel */
+.mpanel{
+position:absolute;bottom:0;left:0;right:0;
+padding:16px 16px 36px;
+background:linear-gradient(to top,rgba(0,0,0,.95) 60%,transparent);
+z-index:10;
 }
-#err {
-  position:fixed; inset:0; display:none;
-  flex-direction:column; align-items:center; justify-content:center;
-  padding:30px; text-align:center; gap:10px;
-}
-#err h2 { color:#f44; font-size:20px; }
-#err p { font-size:13px; color:#aaa; line-height:1.7; }
+.mstrip{display:flex;gap:8px;margin-bottom:14px}
+.mbox{flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:9px 6px;text-align:center}
+.mv{font-size:15px;font-weight:700}
+.ml{font-size:9px;color:var(–t2);text-transform:uppercase;letter-spacing:.7px;margin-top:2px}
+.gores{width:100%;height:50px;border-radius:14px;border:none;background:linear-gradient(135deg,var(–p),var(–c));color:#fff;font-family:‘DM Sans’,sans-serif;font-size:15px;font-weight:700;cursor:pointer}
+
+/* Rotation hint */
+.rhint{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:5;pointer-events:none;opacity:0;transition:opacity .5s;text-align:center}
+.rhint.show{opacity:1}
+.rhint span{font-size:12px;color:rgba(0,229,255,.7);letter-spacing:1px}
+
+/* ── RESULTS ── */
+#results{background:#07070f;overflow-y:auto}
+.rh{display:flex;align-items:center;gap:12px;padding:50px 20px 10px;flex-shrink:0}
+.rtit{font-family:‘Bebas Neue’,sans-serif;font-size:24px;letter-spacing:3px}
+.ms2{display:flex;gap:8px;padding:0 20px 12px;flex-shrink:0}
+.mb2{flex:1;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:9px 6px;text-align:center}
+.mv2{font-size:15px;font-weight:700}
+.ml2{font-size:9px;color:var(–t2);text-transform:uppercase;letter-spacing:.7px;margin-top:2px}
+.sc{margin:0 20px 10px;background:linear-gradient(135deg,#0d1f3c,#0a1020);border:1px solid rgba(0,229,255,.18);border-radius:18px;padding:16px;position:relative;overflow:hidden}
+.sc::after{content:’’;position:absolute;top:-28px;right:-28px;width:90px;height:90px;background:var(–c);border-radius:50%;filter:blur(38px);opacity:.07}
+.scr{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.srng{width:64px;height:64px;border-radius:50%;flex-shrink:0;background:conic-gradient(var(–c) 324deg,rgba(255,255,255,.05) 0);display:flex;align-items:center;justify-content:center;position:relative}
+.srng::before{content:’’;position:absolute;inset:5px;background:#0d1f3c;border-radius:50%}
+.snum{position:relative;font-size:17px;font-weight:800;color:var(–c)}
+.sn{font-size:17px;font-weight:700}.sb{font-size:11px;color:var(–t2)}.ss{font-size:10px;color:var(–c);margin-top:2px;font-weight:600}
+.fbs{display:flex;flex-direction:column;gap:6px}
+.fbr{display:flex;align-items:center;gap:8px}
+.fbl{font-size:11px;color:var(–t2);width:52px;flex-shrink:0}
+.fbt{flex:1;height:4px;background:rgba(255,255,255,.07);border-radius:2px;overflow:hidden}
+.fbf{height:100%;border-radius:2px;background:linear-gradient(90deg,var(–p),var(–c))}
+.fbv{font-size:11px;font-weight:700;width:26px;text-align:right}
+.sl{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(–t2);font-weight:600;padding:4px 20px 7px}
+.shl{padding:0 20px;display:flex;flex-direction:column;gap:8px;padding-bottom:30px}
+.sr{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:13px;padding:11px 13px;display:flex;align-items:center;gap:11px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+.sr.top{border-color:rgba(0,229,255,.25);background:linear-gradient(135deg,#0d1f3c,#0a1020)}
+.sr:active{transform:scale(.98)}
+.si{width:48px;height:48px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.s1{background:rgba(0,229,255,.08)}.s2{background:rgba(124,58,237,.1)}.s3{background:rgba(245,158,11,.1)}.s4{background:rgba(239,68,68,.08)}
+.sif{flex:1;min-width:0}
+.sn2{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb2{font-size:11px;color:var(–t2)}
+.st2{display:flex;gap:4px;margin-top:3px;flex-wrap:wrap}
+.tg{font-size:9px;font-weight:600;padding:2px 6px;border-radius:9px;text-transform:uppercase;letter-spacing:.5px}
+.tg.s{background:rgba(0,229,255,.1);color:var(–c)}.tg.f{background:rgba(34,197,94,.1);color:var(–g)}.tg.b{background:rgba(255,255,255,.06);color:var(–t2)}
+.sp{font-size:13px;font-weight:800;background:rgba(255,255,255,.07);border-radius:8px;padding:4px 8px;flex-shrink:0}
+.tp{position:absolute;top:8px;right:8px;background:linear-gradient(135deg,var(–p),var(–c));color:#fff;font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1px;padding:2px 7px;border-radius:18px}
 </style>
+
 </head>
 <body>
 
-<div id="wrap">
-  <video id="vid" autoplay playsinline muted></video>
+<!-- SPLASH -->
+
+<div id="splash" class="screen active">
+  <div class="logo">FOOTSCAN</div>
+  <div class="tagline">LiDAR · AI · Perfect Fit</div>
+  <div class="rings"><div class="ring"></div><div class="ring"></div><div class="ring"></div><div class="rc">🦶</div></div>
+  <div class="infobox">
+    <div class="ir"><div class="ii">📷</div><div class="it"><strong>Živá kamera</strong>Sfotografuj nohu — vytvoríme 3D model.</div></div>
+    <div class="ir"><div class="ii">🌈</div><div class="it"><strong>Depth vizualizácia</strong>Termálny overlay + interaktívny 3D model.</div></div>
+    <div class="ir"><div class="ii">👟</div><div class="it"><strong>AI Matching</strong>Nájdeme topánky s najlepším fitom.</div></div>
+  </div>
+  <button class="sbtn" onclick="startApp()">Spustiť & povoliť kameru</button>
 </div>
 
-<button id="startBtn" onclick="go()">📷 Spustiť kameru</button>
+<!-- SCANNER -->
 
-<div id="ui">
-  <p id="status">✅ Kamera funguje!</p>
-  <small id="res"></small>
+<div id="scanner" class="screen">
+  <div id="wrap" style="position:absolute;inset:0">
+    <video id="vid" autoplay playsinline muted style="position:absolute;inset:0;width:100vw;height:100vh;-webkit-transform:translateZ(0);transform:translateZ(0);z-index:1"></video>
+  </div>
+  <div id="thermal"></div>
+  <div id="grid"></div>
+  <canvas id="hud"></canvas>
+
+  <div class="htop">
+    <div class="bk" onclick="stopAll()">←</div>
+    <div class="htitle">FOOTSCAN</div>
+    <div class="badge"><div class="bdot"></div>LIVE</div>
+  </div>
+
+  <div class="hbot">
+    <div class="tabs">
+      <button class="tab on" id="tFoot" onclick="setMode('foot')">🦶 Noha</button>
+      <button class="tab"    id="tShoe" onclick="setMode('shoe')">👟 Topánka</button>
+    </div>
+    <div class="prow"><span class="plbl" id="plbl">Umiestni nohu do rámu</span><span class="ppct" id="ppct">0%</span></div>
+    <div class="ptrack"><div class="pfill" id="pfill"></div></div>
+    <button class="abtn" id="abtn" onclick="startScan()">📸 Skenovať nohu</button>
+  </div>
+
+  <div class="dov" id="dov">
+    <div class="oring">✓</div>
+    <div class="otit" id="dtit">Hotovo!</div>
+    <div class="osub" id="dsub"></div>
+    <button class="onxt" id="dnxt">Ďalej →</button>
+  </div>
 </div>
 
-<div id="err">
-  <h2>❌ Chyba</h2>
-  <p id="errMsg"></p>
+<!-- 3D MODEL -->
+
+<div id="model3d" class="screen">
+  <canvas id="threeCanvas"></canvas>
+  <div class="rhint" id="rhint"><span>↔ Potiahnite pre rotáciu</span></div>
+
+  <div class="m3top">
+    <div class="bk" onclick="goTo('scanner');reset()">←</div>
+    <div class="m3title">3D MODEL NOHY</div>
+  </div>
+
+  <div class="mpanel">
+    <div class="mstrip">
+      <div class="mbox"><div class="mv" style="color:var(--c)">26.3<small style="font-size:9px">cm</small></div><div class="ml">Dĺžka</div></div>
+      <div class="mbox"><div class="mv" style="color:var(--c)">9.8<small style="font-size:9px">cm</small></div><div class="ml">Šírka</div></div>
+      <div class="mbox"><div class="mv" style="color:#a78bfa">EU 41</div><div class="ml">Veľkosť</div></div>
+      <div class="mbox"><div class="mv" style="font-size:11px;color:#fbbf24">Stredná</div><div class="ml">Klenba</div></div>
+    </div>
+    <button class="gores" onclick="goTo('results')">📊 Zobraziť odporúčania topánok →</button>
+  </div>
 </div>
+
+<!-- RESULTS -->
+
+<div id="results" class="screen">
+  <div class="rh"><div class="bk" onclick="goTo('model3d')">←</div><div class="rtit">FIT ANALÝZA</div></div>
+  <div class="ms2">
+    <div class="mb2"><div class="mv2" style="color:var(--c)">26.3<small style="font-size:9px">cm</small></div><div class="ml2">Dĺžka</div></div>
+    <div class="mb2"><div class="mv2" style="color:var(--c)">9.8<small style="font-size:9px">cm</small></div><div class="ml2">Šírka</div></div>
+    <div class="mb2"><div class="mv2" style="color:#a78bfa">EU 41</div><div class="ml2">Veľkosť</div></div>
+    <div class="mb2"><div class="mv2" style="font-size:11px;color:#fbbf24">Stredná</div><div class="ml2">Klenba</div></div>
+  </div>
+  <div class="sc">
+    <div style="font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--t2);margin-bottom:10px;font-weight:600">⭐ Najlepší match</div>
+    <div class="scr">
+      <div class="srng"><div class="snum">90%</div></div>
+      <div><div class="sn">Air Max 90 GTX</div><div class="sb">Nike · Bežecká · Outdoor</div><div class="ss">Odporúčaná veľkosť: EU 41</div></div>
+    </div>
+    <div class="fbs">
+      <div class="fbr"><div class="fbl">Dĺžka</div><div class="fbt"><div class="fbf" style="width:94%"></div></div><div class="fbv">94%</div></div>
+      <div class="fbr"><div class="fbl">Šírka</div><div class="fbt"><div class="fbf" style="width:88%"></div></div><div class="fbv">88%</div></div>
+      <div class="fbr"><div class="fbl">Klenba</div><div class="fbt"><div class="fbf" style="width:82%"></div></div><div class="fbv">82%</div></div>
+      <div class="fbr"><div class="fbl">Objem</div><div class="fbt"><div class="fbf" style="width:91%"></div></div><div class="fbv">91%</div></div>
+    </div>
+  </div>
+  <div class="sl">Ďalšie odporúčania</div>
+  <div class="shl">
+    <div class="sr top"><div class="tp">TOP</div><div class="si s1">👟</div><div class="sif"><div class="sn2">Air Max 90 GTX</div><div class="sb2">Nike · €149.99</div><div class="st2"><span class="tg s">EU 41</span><span class="tg f">Ideálny fit</span><span class="tg b">Nike</span></div></div><div class="sp">90%</div></div>
+    <div class="sr"><div class="si s2">👞</div><div class="sif"><div class="sn2">Ultraboost 22</div><div class="sb2">Adidas · €179.00</div><div class="st2"><span class="tg s">EU 41</span><span class="tg f">Dobrý fit</span><span class="tg b">Adidas</span></div></div><div class="sp">84%</div></div>
+    <div class="sr"><div class="si s3">🥾</div><div class="sif"><div class="sn2">Fresh Foam X 1080</div><div class="sb2">New Balance · €164.95</div><div class="st2"><span class="tg s">EU 41.5</span><span class="tg f">Dobrý fit</span><span class="tg b">NB</span></div></div><div class="sp">79%</div></div>
+    <div class="sr"><div class="si s4">🏃</div><div class="sif"><div class="sn2">Gel-Kayano 30</div><div class="sb2">ASICS · €189.00</div><div class="st2"><span class="tg s">EU 41</span><span class="tg b">ASICS</span></div></div><div class="sp">74%</div></div>
+  </div>
+</div>
+
+<!-- Three.js -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
 <script>
-async function go() {
-  document.getElementById('startBtn').style.display = 'none';
+// ── NAV ──
+function goTo(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
 
-  const vid = document.getElementById('vid');
+let stream, rafId, appT=0, lastTS=null;
+let scanning=false, scanDone=false, prog=0, scanLineY=0, scanTimer=null;
+let mode='foot';
+
+function stopAll(){ if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;} cancelAnimationFrame(rafId); goTo('splash'); }
+
+// ── CAMERA ──
+async function startApp(){
+  goTo('scanner');
+  const hud = document.getElementById('hud');
+  hud.width = window.innerWidth; hud.height = window.innerHeight;
+  window.addEventListener('resize',()=>{ hud.width=window.innerWidth; hud.height=window.innerHeight; });
 
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal: 'environment' } },
-      audio: false
-    });
-
+    stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:{ideal:'environment'} }, audio:false });
+    const vid = document.getElementById('vid');
     vid.srcObject = stream;
     vid.muted = true;
-    vid.playsInline = true;
+    const p = vid.play();
+    if(p) p.catch(()=>setTimeout(()=>vid.play(),300));
+    // iOS black screen fix
+    setTimeout(()=>{ vid.style.opacity='.99'; setTimeout(()=>vid.style.opacity='1',50); },400);
+  } catch(e){ console.warn('cam',e); }
 
-    // iOS Safari sometimes needs manual play after srcObject set
-    const playPromise = vid.play();
-    if (playPromise !== undefined) {
-      playPromise.catch(() => {
-        // retry once
-        setTimeout(() => vid.play(), 200);
-      });
+  cancelAnimationFrame(rafId); lastTS=null;
+  rafId = requestAnimationFrame(loop);
+}
+
+// ── HUD LOOP ──
+const hudCtx = ()=>document.getElementById('hud').getContext('2d');
+
+function loop(ts){
+  rafId=requestAnimationFrame(loop);
+  if(!lastTS) lastTS=ts;
+  const dt=Math.min((ts-lastTS)/1000,.05); lastTS=ts; appT+=dt;
+  const c=hudCtx();
+  const W=c.canvas.width, H=c.canvas.height;
+  c.clearRect(0,0,W,H);
+  if(scanning){ scanLineY=(scanLineY+dt*.5)%1; drawScanLine(c,W,H); }
+  drawHUD(c,W,H);
+}
+
+function drawScanLine(c,W,H){
+  const y=scanLineY*H;
+  c.save();
+  const lg=c.createLinearGradient(0,0,W,0);
+  lg.addColorStop(0,'transparent'); lg.addColorStop(.15,'rgba(0,229,255,.9)');
+  lg.addColorStop(.85,'rgba(0,229,255,.9)'); lg.addColorStop(1,'transparent');
+  c.fillStyle=lg; c.fillRect(0,y-1,W,3);
+  const gg=c.createLinearGradient(0,0,W,0);
+  gg.addColorStop(0,'transparent'); gg.addColorStop(.2,'rgba(0,200,255,.1)');
+  gg.addColorStop(.8,'rgba(0,200,255,.1)'); gg.addColorStop(1,'transparent');
+  c.fillStyle=gg; c.fillRect(0,y-18,W,36);
+  c.restore();
+}
+
+function drawHUD(c,W,H){
+  const cx=W/2, cy=H*.44, bw=W*.36, bh=H*.23, arm=26;
+  const pulse=.5+.5*Math.sin(appT*2);
+  const col=scanDone?'rgba(34,197,94,.95)':scanning?`rgba(0,229,255,${.6+.35*pulse})`:`rgba(0,229,255,${.25+.2*pulse})`;
+  c.save(); c.strokeStyle=col; c.lineWidth=2.5; c.lineCap='round';
+  [[cx-bw,cy-bh,1,1],[cx+bw,cy-bh,-1,1],[cx-bw,cy+bh,1,-1],[cx+bw,cy+bh,-1,-1]].forEach(([x,y,dx,dy])=>{
+    c.beginPath(); c.moveTo(x+dx*arm,y); c.lineTo(x,y); c.lineTo(x,y+dy*arm); c.stroke();
+  });
+  c.strokeStyle='rgba(0,229,255,.2)'; c.lineWidth=1;
+  c.beginPath(); c.moveTo(cx,cy-7); c.lineTo(cx,cy+7); c.stroke();
+  c.beginPath(); c.moveTo(cx-7,cy); c.lineTo(cx+7,cy); c.stroke();
+  c.restore();
+
+  if(scanning||scanDone){
+    const n=Math.floor(prog*160);
+    for(let i=0;i<n;i++){
+      const px=cx+(sd(i*127.1)-.5)*bw*2.3, py=cy+(sd(i*311.7)-.5)*bh*2.3;
+      const fl=.2+.8*Math.abs(Math.sin(appT*3.5+i));
+      c.beginPath(); c.arc(px,py,1.6,0,Math.PI*2);
+      c.fillStyle=`hsla(${175+sd(i*71)*90},100%,68%,${fl*.7})`; c.fill();
     }
-
-    // Force repaint after short delay — fixes iOS black screen bug
-    setTimeout(() => {
-      vid.style.opacity = '0.99';
-      setTimeout(() => { vid.style.opacity = '1'; }, 50);
-    }, 300);
-
-    setTimeout(() => {
-      const ui = document.getElementById('ui');
-      ui.style.display = 'block';
-      document.getElementById('res').textContent =
-        vid.videoWidth + '×' + vid.videoHeight + ' — ' + (vid.paused ? 'PAUSED ⚠️' : 'Playing ✅');
-    }, 1500);
-
-  } catch(e) {
-    const ed = document.getElementById('err');
-    ed.style.display = 'flex';
-    document.getElementById('errMsg').innerHTML =
-      '<b>' + e.name + '</b><br>' + e.message + '<br><br>' +
-      'Skontroluj:<br>' +
-      '• Nastavenia → Safari → Kamera → Povoliť<br>' +
-      '• Nie si v anonymnom okne<br>' +
-      '• Stránka je cez HTTPS';
   }
+  if(prog>.38) bdg(c,'26.3 cm  Dĺžka', cx-bw-4,  cy-18,  W,H);
+  if(prog>.58) bdg(c,'9.8 cm  Šírka',  cx+bw-114,cy+22,  W,H);
+  if(prog>.78) bdg(c,'EU 41  Veľkosť', cx-52,    cy+bh+11,W,H);
+  if(prog>.15) legend(c,W,H);
+}
+
+function sd(x){ return Math.abs(Math.sin(x)*43758.5)%1; }
+function bdg(c,txt,x,y,W,H){
+  x=Math.max(5,Math.min(W-122,x)); y=Math.max(70,Math.min(H-140,y));
+  c.save();
+  c.fillStyle='rgba(0,0,0,.7)'; rr(c,x,y,118,26,7); c.fill();
+  c.strokeStyle='rgba(0,229,255,.4)'; c.lineWidth=1; rr(c,x,y,118,26,7); c.stroke();
+  c.beginPath(); c.arc(x+10,y+13,3,0,Math.PI*2); c.fillStyle='rgba(0,229,255,.95)'; c.fill();
+  c.font='bold 11px DM Sans,sans-serif'; c.fillStyle='#00e5ff'; c.fillText(txt,x+18,y+17); c.restore();
+}
+function legend(c,W,H){
+  const x=W-21,y=H*.36,h=H*.26;
+  c.save();
+  const g=c.createLinearGradient(0,y,0,y+h);
+  g.addColorStop(0,'#ff1111'); g.addColorStop(.3,'#ff8800'); g.addColorStop(.5,'#00ff88'); g.addColorStop(.7,'#00aaff'); g.addColorStop(1,'#0011ff');
+  c.fillStyle=g; rr(c,x,y,10,h,5); c.fill();
+  c.strokeStyle='rgba(255,255,255,.12)'; c.lineWidth=1; rr(c,x,y,10,h,5); c.stroke();
+  c.font='8px DM Sans,sans-serif'; c.fillStyle='rgba(255,255,255,.4)';
+  c.fillText('Blíz',x-14,y+9); c.fillText('Ďal',x-12,y+h+2); c.restore();
+}
+function rr(c,x,y,w,h,r){
+  c.beginPath(); c.moveTo(x+r,y); c.lineTo(x+w-r,y); c.arcTo(x+w,y,x+w,y+r,r);
+  c.lineTo(x+w,y+h-r); c.arcTo(x+w,y+h,x+w-r,y+h,r);
+  c.lineTo(x+r,y+h); c.arcTo(x,y+h,x,y+h-r,r);
+  c.lineTo(x,y+r); c.arcTo(x,y,x+r,y,r); c.closePath();
+}
+
+// ── SCAN ──
+const conf={
+  foot:{steps:['Detegujem povrch…','Mapujem kontúry…','Meriam dĺžku…','Meriam šírku…','Analyzujem klenbu…','Generujem 3D model…','Finalizujem…'],okTitle:'Noha naskenovaná!',okSub:'Vytváram 3D model…',nextLbl:'🦶 Zobraziť 3D model',next:()=>{ goTo('model3d'); init3D(); }},
+  shoe:{steps:['Detegujem topánku…','Meriam vnútro…','Hĺbka stielky…','Šírka špice…','Matchujem profily…','Počítam fit score…','Hotovo!'],okTitle:'Topánka naskenovaná!',okSub:'Spúšťam matching…',nextLbl:'📊 Výsledky',next:()=>goTo('results')}
+};
+
+function setMode(m){
+  mode=m;
+  document.getElementById('tFoot').classList.toggle('on',m==='foot');
+  document.getElementById('tShoe').classList.toggle('on',m==='shoe');
+  reset();
+}
+function reset(){
+  scanning=false; scanDone=false; prog=0; scanLineY=0;
+  clearInterval(scanTimer);
+  document.getElementById('pfill').style.width='0%';
+  document.getElementById('ppct').textContent='0%';
+  document.getElementById('plbl').textContent=mode==='foot'?'Umiestni nohu do rámu':'Umiestni topánku do rámu';
+  const b=document.getElementById('abtn');
+  b.className='abtn'; b.disabled=false;
+  b.textContent=mode==='foot'?'📸 Skenovať nohu':'📸 Skenovať topánku';
+  b.onclick=startScan;
+  document.getElementById('dov').classList.remove('show');
+  document.getElementById('thermal').style.opacity='0';
+  document.getElementById('grid').classList.remove? document.getElementById('grid').style.opacity='0':null;
+}
+
+function startScan(){
+  if(scanning) return;
+  scanning=true; prog=0;
+  document.getElementById('abtn').disabled=true;
+  document.getElementById('abtn').textContent='Skenujem…';
+  document.getElementById('grid').style.opacity='1';
+  const th=document.getElementById('thermal');
+  const cf=conf[mode];
+  scanTimer=setInterval(()=>{
+    prog=Math.min(prog+(Math.random()*.028+.013),1);
+    th.style.opacity=Math.min(prog*1.3,.7);
+    const pct=Math.round(prog*100);
+    document.getElementById('pfill').style.width=pct+'%';
+    document.getElementById('ppct').textContent=pct+'%';
+    document.getElementById('plbl').textContent=cf.steps[Math.min(Math.floor(prog*cf.steps.length),cf.steps.length-1)];
+    if(prog>=1){
+      clearInterval(scanTimer); scanning=false; scanDone=true;
+      setTimeout(()=>{
+        document.getElementById('dtit').textContent=cf.okTitle;
+        document.getElementById('dsub').textContent=cf.okSub;
+        const nx=document.getElementById('dnxt');
+        nx.textContent=cf.nextLbl;
+        nx.onclick=()=>{ document.getElementById('dov').classList.remove('show'); cf.next(); };
+        document.getElementById('dov').classList.add('show');
+        document.getElementById('abtn').className='abtn done';
+        document.getElementById('abtn').textContent='✓ Hotovo';
+      },300);
+    }
+  },130);
+}
+
+// ══════════════════════════════════════
+//  THREE.JS 3D FOOT MODEL
+// ══════════════════════════════════════
+let threeRenderer, threeScene, threeCamera, footGroup, animRaf;
+let isDragging=false, prevX=0, prevY=0, rotX=0.3, rotY=0;
+
+function init3D(){
+  const canvas = document.getElementById('threeCanvas');
+  const W=window.innerWidth, H=window.innerHeight;
+
+  if(threeRenderer){
+    threeRenderer.setSize(W,H);
+    threeScene.clear();
+    buildFoot();
+    animate3D();
+    return;
+  }
+
+  threeRenderer = new THREE.WebGLRenderer({ canvas, antialias:true, alpha:true });
+  threeRenderer.setSize(W,H);
+  threeRenderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+  threeRenderer.setClearColor(0x07070f,1);
+
+  threeScene = new THREE.Scene();
+
+  threeCamera = new THREE.PerspectiveCamera(45, W/H, 0.1, 100);
+  threeCamera.position.set(0, 1.5, 4.5);
+  threeCamera.lookAt(0,0,0);
+
+  // Lights
+  const amb = new THREE.AmbientLight(0x223344, 1.2);
+  threeScene.add(amb);
+  const dir = new THREE.DirectionalLight(0x00e5ff, 2.5);
+  dir.position.set(2,4,3); threeScene.add(dir);
+  const dir2 = new THREE.DirectionalLight(0x7c3aed, 1.5);
+  dir2.position.set(-3,-1,-2); threeScene.add(dir2);
+  const pt = new THREE.PointLight(0x00ffaa, 1, 8);
+  pt.position.set(0,2,0); threeScene.add(pt);
+
+  buildFoot();
+
+  // Grid floor
+  const grid = new THREE.GridHelper(10,20,0x00e5ff,0x112233);
+  grid.position.y=-1.1;
+  grid.material.opacity=0.3; grid.material.transparent=true;
+  threeScene.add(grid);
+
+  // Touch/mouse rotation
+  canvas.addEventListener('touchstart', e=>{ isDragging=true; prevX=e.touches[0].clientX; prevY=e.touches[0].clientY; });
+  canvas.addEventListener('touchmove',  e=>{ if(!isDragging)return; e.preventDefault();
+    rotY+=(e.touches[0].clientX-prevX)*.008; rotX+=(e.touches[0].clientY-prevY)*.008;
+    rotX=Math.max(-.6,Math.min(.9,rotX));
+    prevX=e.touches[0].clientX; prevY=e.touches[0].clientY;
+  },{passive:false});
+  canvas.addEventListener('touchend',  ()=>isDragging=false);
+  canvas.addEventListener('mousedown', e=>{ isDragging=true; prevX=e.clientX; prevY=e.clientY; });
+  canvas.addEventListener('mousemove', e=>{ if(!isDragging)return;
+    rotY+=(e.clientX-prevX)*.008; rotX+=(e.clientY-prevY)*.008;
+    rotX=Math.max(-.6,Math.min(.9,rotX));
+    prevX=e.clientX; prevY=e.clientY;
+  });
+  canvas.addEventListener('mouseup', ()=>isDragging=false);
+
+  window.addEventListener('resize',()=>{
+    const W=window.innerWidth,H=window.innerHeight;
+    threeCamera.aspect=W/H; threeCamera.updateProjectionMatrix();
+    threeRenderer.setSize(W,H);
+  });
+
+  animate3D();
+
+  // Hint
+  setTimeout(()=>{
+    const h=document.getElementById('rhint'); h.classList.add('show');
+    setTimeout(()=>h.classList.remove('show'),2500);
+  },800);
+}
+
+function buildFoot(){
+  footGroup = new THREE.Group();
+  threeScene.add(footGroup);
+
+  const mat = new THREE.MeshPhongMaterial({
+    color:0x0a2040, emissive:0x001830, specular:0x00e5ff,
+    shininess:80, wireframe:false, transparent:true, opacity:.92
+  });
+  const wireMat = new THREE.MeshBasicMaterial({
+    color:0x00e5ff, wireframe:true, transparent:true, opacity:.18
+  });
+
+  // ── Main foot body using lathe geometry ──
+  // Side profile of foot (outline points from heel to toe)
+  const footProfile = [];
+  const profilePts = [
+    [0.0, -1.0],  // heel bottom
+    [0.35,-1.0],
+    [0.55,-0.85],
+    [0.62,-0.6],
+    [0.60,-0.3],  // arch
+    [0.58, 0.0],
+    [0.62, 0.3],  // ball
+    [0.58, 0.6],
+    [0.50, 0.8],
+    [0.30, 1.0],  // toe
+    [0.0,  1.05],
+  ];
+  // We'll use ExtrudeGeometry with a custom foot shape instead
+
+  // Foot shape (top view)
+  const shape = new THREE.Shape();
+  shape.moveTo(0, -1.0);         // heel
+  shape.bezierCurveTo(-0.5,-1.0, -0.6,-0.5, -0.58, 0);   // left side
+  shape.bezierCurveTo(-0.60, 0.4, -0.55, 0.7, -0.35, 0.9); // left toe area
+  shape.bezierCurveTo(-0.1, 1.08,  0.1, 1.08,  0.35, 0.9); // toes top
+  shape.bezierCurveTo( 0.55, 0.7,  0.60, 0.4,  0.58, 0);   // right side
+  shape.bezierCurveTo( 0.60,-0.5,  0.50,-1.0,  0.0, -1.0); // back to heel
+
+  const extSettings = {
+    depth: 0.38,
+    bevelEnabled: true,
+    bevelThickness: 0.08,
+    bevelSize: 0.06,
+    bevelSegments: 4,
+    steps: 3,
+  };
+
+  const footGeo = new THREE.ExtrudeGeometry(shape, extSettings);
+  footGeo.rotateX(-Math.PI/2);
+  footGeo.translate(0, -0.1, 0);
+
+  const footMesh = new THREE.Mesh(footGeo, mat);
+  const footWire = new THREE.Mesh(footGeo, wireMat);
+  footGroup.add(footMesh);
+  footGroup.add(footWire);
+
+  // ── Toes ──
+  const toeDefs = [
+    {x:-0.28, z: 0.88, r:0.10, h:0.20},  // big toe
+    {x:-0.14, z: 0.95, r:0.08, h:0.17},
+    {x: 0.00, z: 0.96, r:0.07, h:0.15},
+    {x: 0.13, z: 0.93, r:0.065,h:0.13},
+    {x: 0.24, z: 0.87, r:0.055,h:0.11},
+  ];
+  toeDefs.forEach(td=>{
+    const tg = new THREE.CylinderGeometry(td.r*.7, td.r, td.h, 10);
+    const tm = new THREE.Mesh(tg, mat);
+    tm.position.set(td.x, 0.16, td.z);
+    footGroup.add(tm);
+    // toe wire
+    const tw = new THREE.Mesh(tg, wireMat);
+    tw.position.copy(tm.position);
+    footGroup.add(tw);
+    // toe tip sphere
+    const sg = new THREE.SphereGeometry(td.r*.72, 8, 6);
+    const sm = new THREE.Mesh(sg, mat);
+    sm.position.set(td.x, 0.16+td.h*.4, td.z);
+    footGroup.add(sm);
+  });
+
+  // ── Ankle bump ──
+  const ankleG = new THREE.SphereGeometry(0.22, 12, 8);
+  const ankleM = new THREE.Mesh(ankleG, mat);
+  ankleM.position.set(0, 0.20, -0.82);
+  ankleM.scale.set(1.2,0.8,0.7);
+  footGroup.add(ankleM);
+
+  // ── Measurement lines ──
+  const lineMat = new THREE.LineBasicMaterial({ color:0x00e5ff, transparent:true, opacity:.7 });
+
+  // Length line
+  const lengthPts = [new THREE.Vector3(0,-0.15,-1.02), new THREE.Vector3(0,-0.15,1.0)];
+  const lengthLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints(lengthPts), lineMat);
+  footGroup.add(lengthLine);
+
+  // Width line
+  const widthPts = [new THREE.Vector3(-0.62,-0.1,0.15), new THREE.Vector3(0.62,-0.1,0.15)];
+  const widthLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints(widthPts), lineMat);
+  footGroup.add(widthLine);
+
+  // ── Floating measurement labels (sprites) ──
+  function makeLabel(text, pos){
+    const canvas2 = document.createElement('canvas');
+    canvas2.width=200; canvas2.height=56;
+    const ctx2=canvas2.getContext('2d');
+    ctx2.fillStyle='rgba(0,0,0,.7)';
+    ctx2.roundRect? ctx2.roundRect(2,2,196,52,10) : ctx2.fillRect(2,2,196,52);
+    ctx2.fill();
+    ctx2.strokeStyle='rgba(0,229,255,.6)'; ctx2.lineWidth=1.5;
+    ctx2.roundRect? ctx2.roundRect(2,2,196,52,10) : ctx2.strokeRect(2,2,196,52);
+    ctx2.stroke();
+    ctx2.fillStyle='#00e5ff'; ctx2.font='bold 22px sans-serif'; ctx2.textAlign='center';
+    ctx2.fillText(text, 100, 35);
+    const tex=new THREE.CanvasTexture(canvas2);
+    const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true}));
+    sp.scale.set(1.1,.32,1); sp.position.copy(pos);
+    footGroup.add(sp);
+  }
+  makeLabel('26.3 cm', new THREE.Vector3(-1.1,-0.1,0));
+  makeLabel('9.8 cm',  new THREE.Vector3(0,-0.1,1.35));
+  makeLabel('EU 41',   new THREE.Vector3(0.9, 0.4,-.5));
+
+  // Position group
+  footGroup.rotation.x = rotX;
+  footGroup.rotation.y = rotY;
+}
+
+let t3=0;
+function animate3D(){
+  animRaf=requestAnimationFrame(animate3D);
+  if(!document.getElementById('model3d').classList.contains('active')){ cancelAnimationFrame(animRaf); return; }
+  t3+=0.016;
+
+  if(!isDragging){
+    rotY += 0.005; // slow auto-rotate
+  }
+  footGroup.rotation.x = rotX;
+  footGroup.rotation.y = rotY;
+
+  // Subtle float
+  footGroup.position.y = Math.sin(t3*.8)*.04;
+
+  // Pulse wireframe opacity
+  footGroup.children.forEach(c=>{
+    if(c.material && c.material.wireframe){
+      c.material.opacity = .12 + .08*Math.sin(t3*1.5);
+    }
+  });
+
+  threeRenderer.render(threeScene, threeCamera);
 }
 </script>
 
