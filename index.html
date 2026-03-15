@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>FootScan — LiDAR</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+:root {
+  --accent:#00e5ff; --accent2:#7c3aed; --green:#22c55e;
+  --text:#f0f0f8; --text2:#8888aa; --bg:#07070f;
+}
+html,body { width:100%;height:100%;background:#000;font-family:'DM Sans',sans-serif;overflow:hidden;color:var(--text); }
+
+.screen { position:absolute;inset:0;display:none;flex-direction:column; }
+.screen.active { display:flex; }
+
+/* ── SPLASH ── */
+#splash {
+background:radial-gradient(ellipse at 60% 40%,#0d1f3c 0%,#07070f 70%);
+align-items:center;justify-content:center;padding:40px 32px;text-align:center;gap:0;
+}
+.splash-logo {
+font-family:‘Bebas Neue’,sans-serif;font-size:52px;letter-spacing:6px;
+background:linear-gradient(135deg,var(–accent),var(–accent2));
+-webkit-background-clip:text;-webkit-text-fill-color:transparent;
+margin-bottom:4px;
+animation:logoPulse 3s ease-in-out infinite;
+}
+@keyframes logoPulse{0%,100%{filter:drop-shadow(0 0 20px rgba(0,229,255,.3))}50%{filter:drop-shadow(0 0 40px rgba(0,229,255,.7))}}
+.splash-tagline { font-size:13px;color:var(–text2);letter-spacing:3px;text-transform:uppercase;margin-bottom:44px; }
+
+.lidar-ring-wrap { position:relative;width:160px;height:160px;margin:0 auto 44px; }
+.lidar-ring {
+position:absolute;inset:0;border-radius:50%;
+border:1px solid rgba(0,229,255,.2);
+animation:ringExp 3s ease-out infinite;
+}
+.lidar-ring:nth-child(2){animation-delay:.7s}
+.lidar-ring:nth-child(3){animation-delay:1.4s}
+@keyframes ringExp{0%{transform:scale(.1);opacity:.9}100%{transform:scale(1.7);opacity:0}}
+.lidar-center {
+position:absolute;inset:28px;border-radius:50%;
+background:rgba(0,229,255,.06);border:1.5px solid rgba(0,229,255,.4);
+display:flex;align-items:center;justify-content:center;font-size:38px;
+}
+
+.splash-info {
+background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);
+border-radius:16px;padding:16px 20px;margin-bottom:24px;
+text-align:left;display:flex;flex-direction:column;gap:10px;width:100%;max-width:320px;
+}
+.info-row{display:flex;gap:12px;align-items:flex-start}
+.info-icon{font-size:17px;flex-shrink:0;margin-top:1px}
+.info-text{font-size:12px;color:var(–text2);line-height:1.5}
+.info-text strong{color:var(–text);display:block}
+
+.start-btn {
+width:100%;max-width:320px;height:54px;border-radius:18px;border:none;
+background:linear-gradient(135deg,var(–accent2),var(–accent));
+color:#fff;font-family:‘DM Sans’,sans-serif;font-size:16px;font-weight:700;
+cursor:pointer;box-shadow:0 8px 40px rgba(0,229,255,.25);
+transition:transform .15s;letter-spacing:.5px;
+}
+.start-btn:active{transform:scale(.97)}
+
+/* ── SCANNER ── */
+#scanner { background:#000;position:relative; }
+
+/* video is HIDDEN — we draw it manually onto canvas for pixel access */
+video#vid {
+position:absolute;
+width:1px;height:1px;opacity:0;pointer-events:none;
+}
+
+#mainCanvas {
+position:absolute;inset:0;width:100%;height:100%;
+}
+
+.hud-top {
+position:absolute;top:0;left:0;right:0;
+padding:50px 18px 14px;
+background:linear-gradient(to bottom,rgba(0,0,0,.7) 0%,transparent 100%);
+display:flex;align-items:center;gap:10px;z-index:20;pointer-events:none;
+}
+.hud-top > * { pointer-events:all; }
+.back-btn {
+width:36px;height:36px;border-radius:50%;
+background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.14);
+display:flex;align-items:center;justify-content:center;
+cursor:pointer;color:#fff;font-size:18px;flex-shrink:0;
+}
+.back-btn:active{background:rgba(255,255,255,.2)}
+.hud-title {
+font-family:‘Bebas Neue’,sans-serif;font-size:22px;letter-spacing:3px;
+background:linear-gradient(135deg,var(–accent),#fff);
+-webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.lidar-badge {
+margin-left:auto;
+background:rgba(0,229,255,.12);border:1px solid rgba(0,229,255,.3);
+border-radius:20px;padding:4px 10px;
+font-size:10px;font-weight:700;color:var(–accent);
+text-transform:uppercase;letter-spacing:1.5px;
+display:flex;align-items:center;gap:5px;
+}
+.lidar-dot{width:6px;height:6px;border-radius:50%;background:var(–accent);animation:blinkDot 1.2s ease-in-out infinite}
+@keyframes blinkDot{0%,100%{opacity:1}50%{opacity:.2}}
+
+.hud-bottom {
+position:absolute;bottom:0;left:0;right:0;
+padding:16px 18px 36px;
+background:linear-gradient(to top,rgba(0,0,0,.88) 0%,transparent 100%);
+z-index:20;
+}
+.mode-tabs{display:flex;gap:8px;margin-bottom:14px}
+.mode-tab {
+flex:1;height:34px;border-radius:10px;
+border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);
+color:var(–text2);font-family:‘DM Sans’,sans-serif;
+font-size:11px;font-weight:600;cursor:pointer;
+text-transform:uppercase;letter-spacing:1px;transition:all .2s;
+}
+.mode-tab.active{background:rgba(0,229,255,.12);border-color:rgba(0,229,255,.35);color:var(–accent)}
+
+.prog-row{display:flex;justify-content:space-between;margin-bottom:6px}
+.prog-label{font-size:12px;font-weight:600;color:var(–text)}
+.prog-pct{font-size:12px;font-weight:700;color:var(–accent)}
+.prog-track{height:3px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden;margin-bottom:14px}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(–accent2),var(–accent));border-radius:2px;width:0%;transition:width .3s ease;box-shadow:0 0 8px var(–accent)}
+
+.scan-trigger {
+width:100%;height:54px;border-radius:16px;border:none;
+font-family:‘DM Sans’,sans-serif;font-size:16px;font-weight:700;
+cursor:pointer;transition:all .2s;
+background:linear-gradient(135deg,var(–accent2),var(–accent));color:#fff;
+box-shadow:0 6px 28px rgba(0,229,255,.2);
+}
+.scan-trigger:active{transform:scale(.98)}
+.scan-trigger.done{background:linear-gradient(135deg,#059669,var(–green));box-shadow:0 6px 28px rgba(34,197,94,.3)}
+.scan-trigger:disabled{opacity:.45;cursor:not-allowed}
+
+.complete-overlay {
+position:absolute;inset:0;z-index:30;background:rgba(0,0,0,.8);
+display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+opacity:0;pointer-events:none;transition:opacity .4s;
+}
+.complete-overlay.show{opacity:1;pointer-events:all}
+.ok-ring {
+width:78px;height:78px;border-radius:50%;
+background:linear-gradient(135deg,#059669,var(–green));
+display:flex;align-items:center;justify-content:center;font-size:32px;
+box-shadow:0 0 50px rgba(34,197,94,.5);
+animation:popIn .5s cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes popIn{from{transform:scale(0)}to{transform:scale(1)}}
+.ok-title{font-size:22px;font-weight:700}
+.ok-sub{font-size:13px;color:var(–text2);text-align:center;padding:0 30px}
+.ok-next {
+margin-top:8px;padding:14px 36px;border-radius:14px;border:none;
+background:linear-gradient(135deg,var(–accent2),var(–accent));
+color:#fff;font-family:‘DM Sans’,sans-serif;font-size:15px;font-weight:700;
+cursor:pointer;
+}
+
+/* ── RESULTS ── */
+#results{background:var(–bg);overflow-y:auto}
+.res-header{display:flex;align-items:center;gap:12px;padding:52px 20px 12px;flex-shrink:0}
+.res-title{font-family:‘Bebas Neue’,sans-serif;font-size:24px;letter-spacing:3px}
+.meas-strip{display:flex;gap:8px;padding:0 20px 14px;flex-shrink:0}
+.ms-box{flex:1;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:10px 8px;text-align:center}
+.ms-val{font-size:16px;font-weight:700}
+.ms-lbl{font-size:9px;color:var(–text2);text-transform:uppercase;letter-spacing:.8px;margin-top:2px}
+.score-card{margin:0 20px 12px;background:linear-gradient(135deg,#0d1f3c,#0a1020);border:1px solid rgba(0,229,255,.18);border-radius:20px;padding:18px;position:relative;overflow:hidden}
+.score-card::after{content:’’;position:absolute;top:-30px;right:-30px;width:100px;height:100px;background:var(–accent);border-radius:50%;filter:blur(40px);opacity:.08}
+.sc-row{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+.sc-ring{width:68px;height:68px;border-radius:50%;flex-shrink:0;background:conic-gradient(var(–accent) 324deg,rgba(255,255,255,.05) 0);display:flex;align-items:center;justify-content:center;position:relative}
+.sc-ring::before{content:’’;position:absolute;inset:5px;background:#0d1f3c;border-radius:50%}
+.sc-num{position:relative;font-size:18px;font-weight:800;color:var(–accent)}
+.sc-name{font-size:18px;font-weight:700}
+.sc-brand{font-size:12px;color:var(–text2)}
+.sc-size{font-size:11px;color:var(–accent);margin-top:3px;font-weight:600}
+.fit-bars{display:flex;flex-direction:column;gap:7px}
+.fb-row{display:flex;align-items:center;gap:8px}
+.fb-lbl{font-size:11px;color:var(–text2);width:55px;flex-shrink:0}
+.fb-track{flex:1;height:5px;background:rgba(255,255,255,.07);border-radius:3px;overflow:hidden}
+.fb-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(–accent2),var(–accent))}
+.fb-val{font-size:11px;font-weight:700;width:28px;text-align:right}
+.sec-lbl{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(–text2);font-weight:600;padding:4px 20px 8px}
+.shoe-list{padding:0 20px;display:flex;flex-direction:column;gap:9px;padding-bottom:32px}
+.shoe-row{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+.shoe-row.top{border-color:rgba(0,229,255,.25);background:linear-gradient(135deg,#0d1f3c,#0a1020)}
+.shoe-row:active{transform:scale(.98)}
+.shoe-icon{width:50px;height:50px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
+.si1{background:rgba(0,229,255,.08)}.si2{background:rgba(124,58,237,.1)}.si3{background:rgba(245,158,11,.1)}.si4{background:rgba(239,68,68,.08)}
+.shoe-info{flex:1;min-width:0}
+.shoe-name2{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.shoe-brand2{font-size:11px;color:var(–text2)}
+.shoe-tags2{display:flex;gap:4px;margin-top:4px;flex-wrap:wrap}
+.stag{font-size:9px;font-weight:600;padding:2px 7px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px}
+.stag.s{background:rgba(0,229,255,.1);color:var(–accent)}.stag.f{background:rgba(34,197,94,.1);color:var(–green)}.stag.b{background:rgba(255,255,255,.06);color:var(–text2)}
+.spill{font-size:14px;font-weight:800;background:rgba(255,255,255,.07);border-radius:9px;padding:4px 9px;flex-shrink:0}
+.top-pill{position:absolute;top:9px;right:9px;background:linear-gradient(135deg,var(–accent2),var(–accent));color:#fff;font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1px;padding:2px 8px;border-radius:20px}
+</style>
+
+</head>
+<body>
+
+<!-- SPLASH -->
+
+<div id="splash" class="screen active">
+  <div class="splash-logo">FOOTSCAN</div>
+  <div class="splash-tagline">LiDAR · AI · Perfect Fit</div>
+  <div class="lidar-ring-wrap">
+    <div class="lidar-ring"></div><div class="lidar-ring"></div><div class="lidar-ring"></div>
+    <div class="lidar-center">🦶</div>
+  </div>
+  <div class="splash-info">
+    <div class="info-row"><div class="info-icon">📷</div><div class="info-text"><strong>Živá kamera</strong>Skutočný video feed z tvojho iPhone — zadná kamera pre najlepší výsledok.</div></div>
+    <div class="info-row"><div class="info-icon">🌈</div><div class="info-text"><strong>Depth simulácia</strong>Termálna hĺbková mapa v reálnom čase (Canvas 2D — funguje na iOS Safari).</div></div>
+    <div class="info-row"><div class="info-icon">🔒</div><div class="info-text"><strong>100% lokálne</strong>Žiadne dáta sa neodosielajú. Video zostáva v zariadení.</div></div>
+  </div>
+  <button class="start-btn" onclick="initScanner()">Povoliť kameru & spustiť</button>
+</div>
+
+<!-- SCANNER -->
+
+<div id="scanner" class="screen">
+  <!-- hidden video element — we draw it to canvas ourselves -->
+  <video id="vid" autoplay playsinline muted></video>
+  <canvas id="mainCanvas"></canvas>
+
+  <div class="hud-top">
+    <div class="back-btn" onclick="stopAll()">←</div>
+    <div class="hud-title">FOOTSCAN</div>
+    <div class="lidar-badge"><div class="lidar-dot"></div>DEPTH SIM</div>
+  </div>
+
+  <div class="hud-bottom">
+    <div class="mode-tabs">
+      <button class="mode-tab active" id="tabFoot" onclick="setMode('foot')">🦶 Noha</button>
+      <button class="mode-tab"        id="tabShoe" onclick="setMode('shoe')">👟 Topánka</button>
+    </div>
+    <div class="prog-row">
+      <span class="prog-label" id="progLabel">Inicializujem kameru…</span>
+      <span class="prog-pct"   id="progPct">0%</span>
+    </div>
+    <div class="prog-track"><div class="prog-fill" id="progFill"></div></div>
+    <button class="scan-trigger" id="scanBtn" disabled onclick="startScan()">Čakám na kameru…</button>
+  </div>
+
+  <div class="complete-overlay" id="doneOverlay">
+    <div class="ok-ring">✓</div>
+    <div class="ok-title" id="doneTitle">Hotovo!</div>
+    <div class="ok-sub"   id="doneSub"></div>
+    <button class="ok-next" id="doneNext">Ďalej →</button>
+  </div>
+</div>
+
+<!-- RESULTS -->
+
+<div id="results" class="screen">
+  <div class="res-header">
+    <div class="back-btn" onclick="goTo('scanner');resetScan()">←</div>
+    <div class="res-title">FIT ANALÝZA</div>
+  </div>
+  <div class="meas-strip">
+    <div class="ms-box"><div class="ms-val" style="color:var(--accent)">26.3<small style="font-size:10px">cm</small></div><div class="ms-lbl">Dĺžka</div></div>
+    <div class="ms-box"><div class="ms-val" style="color:var(--accent)">9.8<small style="font-size:10px">cm</small></div><div class="ms-lbl">Šírka</div></div>
+    <div class="ms-box"><div class="ms-val" style="color:#a78bfa">EU 41</div><div class="ms-lbl">Veľkosť</div></div>
+    <div class="ms-box"><div class="ms-val" style="font-size:12px;color:#fbbf24">Stredná</div><div class="ms-lbl">Klenba</div></div>
+  </div>
+  <div class="score-card">
+    <div style="font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text2);margin-bottom:12px;font-weight:600;">⭐ Najlepší match</div>
+    <div class="sc-row">
+      <div class="sc-ring"><div class="sc-num">90%</div></div>
+      <div><div class="sc-name">Air Max 90 GTX</div><div class="sc-brand">Nike · Bežecká · Outdoor</div><div class="sc-size">Odporúčaná veľkosť: EU 41</div></div>
+    </div>
+    <div class="fit-bars">
+      <div class="fb-row"><div class="fb-lbl">Dĺžka</div><div class="fb-track"><div class="fb-fill" style="width:94%"></div></div><div class="fb-val">94%</div></div>
+      <div class="fb-row"><div class="fb-lbl">Šírka</div><div class="fb-track"><div class="fb-fill" style="width:88%"></div></div><div class="fb-val">88%</div></div>
+      <div class="fb-row"><div class="fb-lbl">Klenba</div><div class="fb-track"><div class="fb-fill" style="width:82%"></div></div><div class="fb-val">82%</div></div>
+      <div class="fb-row"><div class="fb-lbl">Objem</div><div class="fb-track"><div class="fb-fill" style="width:91%"></div></div><div class="fb-val">91%</div></div>
+    </div>
+  </div>
+  <div class="sec-lbl">Ďalšie odporúčania</div>
+  <div class="shoe-list">
+    <div class="shoe-row top"><div class="top-pill">TOP</div><div class="shoe-icon si1">👟</div><div class="shoe-info"><div class="shoe-name2">Air Max 90 GTX</div><div class="shoe-brand2">Nike · €149.99</div><div class="shoe-tags2"><span class="stag s">EU 41</span><span class="stag f">Ideálny fit</span><span class="stag b">Nike</span></div></div><div class="spill">90%</div></div>
+    <div class="shoe-row"><div class="shoe-icon si2">👞</div><div class="shoe-info"><div class="shoe-name2">Ultraboost 22</div><div class="shoe-brand2">Adidas · €179.00</div><div class="shoe-tags2"><span class="stag s">EU 41</span><span class="stag f">Dobrý fit</span><span class="stag b">Adidas</span></div></div><div class="spill">84%</div></div>
+    <div class="shoe-row"><div class="shoe-icon si3">🥾</div><div class="shoe-info"><div class="shoe-name2">Fresh Foam X 1080</div><div class="shoe-brand2">New Balance · €164.95</div><div class="shoe-tags2"><span class="stag s">EU 41.5</span><span class="stag f">Dobrý fit</span><span class="stag b">NB</span></div></div><div class="spill">79%</div></div>
+    <div class="shoe-row"><div class="shoe-icon si4">🏃</div><div class="shoe-info"><div class="shoe-name2">Gel-Kayano 30</div><div class="shoe-brand2">ASICS · €189.00</div><div class="shoe-tags2"><span class="stag s">EU 41</span><span class="stag b">ASICS</span></div></div><div class="spill">74%</div></div>
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────
+const vid    = document.getElementById('vid');
+const canvas = document.getElementById('mainCanvas');
+const ctx    = canvas.getContext('2d');
+
+let stream   = null;
+let rafId    = null;
+let appTime  = 0;
+let lastTS   = null;
+
+// scan state
+let scanning   = false;
+let scanDone   = false;
+let scanProg   = 0;
+let depthBlend = 0;
+let scanLineY  = 0;
+let scanTimer  = null;
+let currentMode = 'foot';
+
+// tiny offscreen canvas for pixel-level depth effect
+let off, offCtx;
+
+// ─── Navigation ───
+function goTo(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function stopAll(){
+  if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
+  cancelAnimationFrame(rafId); rafId=null;
+  goTo('splash');
+}
+
+// ─── Camera init ───
+async function initScanner(){
+  goTo('scanner');
+  resize();
+
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video:{ facingMode:{ideal:'environment'}, width:{ideal:1280}, height:{ideal:720} },
+      audio:false
+    });
+    vid.srcObject = stream;
+    // iOS Safari requires inline play + user gesture already happened
+    await vid.play();
+    onReady(false);
+  } catch(e){
+    onReady(true);   // demo mode
+  }
+}
+
+function resize(){
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+  // offscreen at 1/5 resolution — faster pixel ops
+  off = document.createElement('canvas');
+  off.width  = Math.max(1, Math.floor(canvas.width  / 5));
+  off.height = Math.max(1, Math.floor(canvas.height / 5));
+  offCtx = off.getContext('2d', {willReadFrequently:true});
+}
+window.addEventListener('resize', resize);
+
+function onReady(demo){
+  cancelAnimationFrame(rafId); lastTS=null;
+  rafId = requestAnimationFrame(loop);
+  const btn = document.getElementById('scanBtn');
+  btn.disabled = false;
+  btn.textContent = currentMode==='foot' ? '🦶 Skenovať nohu' : '👟 Skenovať topánku';
+  document.getElementById('progLabel').textContent = demo
+    ? 'Demo režim — kamera nedostupná'
+    : (currentMode==='foot' ? 'Umiestni nohu do rámu' : 'Umiestni topánku do rámu');
+}
+
+// ─── Main render loop ───
+function loop(ts){
+  rafId = requestAnimationFrame(loop);
+  if(!lastTS) lastTS=ts;
+  const dt = Math.min((ts-lastTS)/1000, .05);
+  lastTS=ts; appTime+=dt;
+
+  const W=canvas.width, H=canvas.height;
+  ctx.clearRect(0,0,W,H);
+
+  // 1. Draw camera frame (or demo bg)
+  if(stream && vid.readyState>=2){
+    ctx.drawImage(vid,0,0,W,H);
+  } else {
+    drawDemoBg(W,H);
+  }
+
+  // 2. Depth thermal overlay
+  if(depthBlend > 0.02){
+    applyDepthOverlay(W,H);
+  }
+
+  // 3. Animated scan line
+  if(scanning){
+    scanLineY = (scanLineY + dt*0.5) % 1;
+    drawScanLine(W,H);
+  }
+
+  // 4. HUD (brackets, points, badges)
+  drawHUD(W,H);
+}
+
+// ─── Demo background ───
+function drawDemoBg(W,H){
+  const g=ctx.createRadialGradient(W/2,H*.4,0,W/2,H*.4,W*.9);
+  g.addColorStop(0,'#0a1828'); g.addColorStop(1,'#000');
+  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+  for(let i=0;i<180;i++){
+    const x=(Math.abs(Math.sin(i*127.1+appTime*.2)))*W;
+    const y=(Math.abs(Math.sin(i*311.7+appTime*.15)))*H;
+    const a=(Math.sin(appTime*2.5+i)*.5+.5)*.5;
+    ctx.beginPath();ctx.arc(x,y,1.3,0,Math.PI*2);
+    ctx.fillStyle=`rgba(0,200,255,${a})`;ctx.fill();
+  }
+}
+
+// ─── Depth / thermal overlay ───
+function applyDepthOverlay(W,H){
+  if(!offCtx) return;
+  const OW=off.width, OH=off.height;
+
+  // Copy downsampled frame
+  offCtx.drawImage(canvas,0,0,OW,OH);
+
+  let img;
+  try { img=offCtx.getImageData(0,0,OW,OH); } catch(e){ return; }
+  const d=img.data;
+
+  for(let i=0;i<d.length;i+=4){
+    const luma=(d[i]*299+d[i+1]*587+d[i+2]*114)/1000;
+    const depth=1-luma/255;             // dark=close, bright=far
+    const tc=thermalRGB(depth);
+    d[i]=tc[0]; d[i+1]=tc[1]; d[i+2]=tc[2];
+    d[i+3]=Math.round(depthBlend*210);  // alpha = blend amount
+  }
+  offCtx.putImageData(img,0,0);
+
+  // Upscale back — intentionally pixelated for "sensor" feel
+  ctx.save();
+  ctx.imageSmoothingEnabled=false;
+  ctx.drawImage(off,0,0,W,H);
+  ctx.restore();
+}
+
+function thermalRGB(t){
+  t=Math.max(0,Math.min(1,t));
+  let r,g,b;
+  if(t<.16){       const s=t/.16;        r=0;   g=Math.round(s*30);  b=Math.round(100+s*155);}
+  else if(t<.33){  const s=(t-.16)/.17;  r=0;   g=Math.round(30+s*220); b=Math.round(255-s*255);}
+  else if(t<.5){   const s=(t-.33)/.17;  r=Math.round(s*255); g=255; b=0;}
+  else if(t<.67){  const s=(t-.5)/.17;   r=255; g=Math.round(255-s*130); b=0;}
+  else if(t<.84){  const s=(t-.67)/.17;  r=255; g=Math.round(125-s*125); b=0;}
+  else {            const s=(t-.84)/.16;  r=255; g=0; b=Math.round(s*80);}
+  return [r,g,b];
+}
+
+// ─── Scan line ───
+function drawScanLine(W,H){
+  const y=scanLineY*H;
+  ctx.save();
+  ctx.globalCompositeOperation='screen';
+  const lg=ctx.createLinearGradient(0,0,W,0);
+  lg.addColorStop(0,'transparent');
+  lg.addColorStop(.2,'rgba(0,229,255,.85)');
+  lg.addColorStop(.8,'rgba(0,229,255,.85)');
+  lg.addColorStop(1,'transparent');
+  ctx.fillStyle=lg; ctx.fillRect(0,y-1,W,3);
+  const gg=ctx.createLinearGradient(0,0,W,0);
+  gg.addColorStop(0,'transparent');
+  gg.addColorStop(.2,'rgba(0,180,255,.12)');
+  gg.addColorStop(.8,'rgba(0,180,255,.12)');
+  gg.addColorStop(1,'transparent');
+  ctx.fillStyle=gg; ctx.fillRect(0,y-14,W,28);
+  ctx.restore();
+}
+
+// ─── HUD (drawn on canvas) ───
+function drawHUD(W,H){
+  const cx=W/2, cy=H*.44;
+  const bw=W*.35, bh=H*.23;
+  const arm=26;
+
+  // Corner brackets
+  const pulse=.5+.5*Math.sin(appTime*2);
+  let col = scanDone  ? 'rgba(34,197,94,.95)'
+          : scanning  ? `rgba(0,229,255,${.65+.3*pulse})`
+          :             `rgba(0,229,255,${.28+.22*pulse})`;
+
+  ctx.save();
+  ctx.strokeStyle=col; ctx.lineWidth=2.5; ctx.lineCap='round'; ctx.setLineDash([]);
+  [[cx-bw,cy-bh,1,1],[cx+bw,cy-bh,-1,1],[cx-bw,cy+bh,1,-1],[cx+bw,cy+bh,-1,-1]].forEach(([x,y,dx,dy])=>{
+    ctx.beginPath(); ctx.moveTo(x+dx*arm,y); ctx.lineTo(x,y); ctx.lineTo(x,y+dy*arm); ctx.stroke();
+  });
+
+  // Crosshair centre
+  ctx.strokeStyle='rgba(0,229,255,.2)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(cx,cy-8); ctx.lineTo(cx,cy+8); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx-8,cy); ctx.lineTo(cx+8,cy); ctx.stroke();
+  ctx.restore();
+
+  // Point cloud
+  if(scanning||scanDone){
+    const n=Math.floor(scanProg*160);
+    for(let i=0;i<n;i++){
+      const px=cx+(seeded(i*127.1)-.5)*bw*2.4;
+      const py=cy+(seeded(i*311.7)-.5)*bh*2.4;
+      const fl=.25+.75*Math.abs(Math.sin(appTime*3.5+i));
+      const hue=170+seeded(i*71.3)*100;
+      ctx.beginPath(); ctx.arc(px,py,1.6,0,Math.PI*2);
+      ctx.fillStyle=`hsla(${hue},100%,70%,${fl*.75})`; ctx.fill();
+    }
+  }
+
+  // Measurement badges
+  if(scanProg>.38) badge(cx-bw-8, cy-16,  '26.3 cm  Dĺžka',  W,H);
+  if(scanProg>.58) badge(cx+bw-110,cy+24, '9.8 cm  Šírka',   W,H);
+  if(scanProg>.78) badge(cx-54,   cy+bh+12,'EU 41  Veľkosť', W,H);
+
+  // Depth colour legend
+  if(depthBlend>.1) depthLegend(W,H);
+}
+
+function seeded(x){ return Math.abs(Math.sin(x)*43758.5)%1; }
+
+function badge(x,y,txt,W,H){
+  x=Math.max(6,Math.min(W-118,x));
+  y=Math.max(75,Math.min(H-145,y));
+  ctx.save();
+  ctx.fillStyle='rgba(0,0,0,.68)'; rr(x,y,116,26,7); ctx.fill();
+  ctx.strokeStyle='rgba(0,229,255,.4)'; ctx.lineWidth=1; rr(x,y,116,26,7); ctx.stroke();
+  ctx.beginPath(); ctx.arc(x+10,y+13,3,0,Math.PI*2);
+  ctx.fillStyle='rgba(0,229,255,.9)'; ctx.fill();
+  ctx.font='bold 11px DM Sans,sans-serif'; ctx.fillStyle='rgba(0,229,255,1)';
+  ctx.fillText(txt,x+18,y+17);
+  ctx.restore();
+}
+
+function depthLegend(W,H){
+  const x=W-21, y=H*.38, h=H*.24;
+  ctx.save();
+  const g=ctx.createLinearGradient(0,y,0,y+h);
+  g.addColorStop(0,'#ff1111'); g.addColorStop(.3,'#ff8800');
+  g.addColorStop(.5,'#00ff88'); g.addColorStop(.7,'#00aaff'); g.addColorStop(1,'#0011ff');
+  ctx.fillStyle=g; rr(x,y,10,h,5); ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,.12)'; ctx.lineWidth=1; rr(x,y,10,h,5); ctx.stroke();
+  ctx.font='8px DM Sans,sans-serif'; ctx.fillStyle='rgba(255,255,255,.45)';
+  ctx.fillText('Near',x-15,y+9); ctx.fillText('Far',x-11,y+h+2);
+  ctx.restore();
+}
+
+function rr(x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.arcTo(x+w,y,x+w,y+r,r);
+  ctx.lineTo(x+w,y+h-r); ctx.arcTo(x+w,y+h,x+w-r,y+h,r);
+  ctx.lineTo(x+r,y+h); ctx.arcTo(x,y+h,x,y+h-r,r);
+  ctx.lineTo(x,y+r); ctx.arcTo(x,y,x+r,y,r); ctx.closePath();
+}
+
+// ─── Scan flow ───
+const modeConf={
+  foot:{
+    steps:['Detegujem povrch…','Mapujem kontúry…','Meriam dĺžku…','Meriam šírku…','Analyzujem klenbu…','Generujem 3D model…','Finalizujem…'],
+    okTitle:'Noha naskenovaná!', okSub:'3D model bol vytvorený',
+    nextLabel:'👟 Skenovať topánku', nextAction:()=>setMode('shoe'),
+  },
+  shoe:{
+    steps:['Detegujem topánku…','Meriam vnútro…','Hĺbka stielky…','Šírka špice…','Matchujem profily…','Počítam fit score…','Hotovo!'],
+    okTitle:'Topánka naskenovaná!', okSub:'Spúšťam matching algoritmus…',
+    nextLabel:'📊 Zobraziť výsledky', nextAction:()=>goTo('results'),
+  }
+};
+
+function setMode(m){
+  currentMode=m;
+  document.getElementById('tabFoot').classList.toggle('active',m==='foot');
+  document.getElementById('tabShoe').classList.toggle('active',m==='shoe');
+  resetScan();
+}
+
+function resetScan(){
+  scanning=false; scanDone=false; scanProg=0; depthBlend=0; scanLineY=0;
+  clearInterval(scanTimer);
+  document.getElementById('progFill').style.width='0%';
+  document.getElementById('progPct').textContent='0%';
+  document.getElementById('progLabel').textContent=
+    currentMode==='foot'?'Umiestni nohu do rámu':'Umiestni topánku do rámu';
+  const btn=document.getElementById('scanBtn');
+  btn.className='scan-trigger'; btn.disabled=false;
+  btn.textContent=currentMode==='foot'?'🦶 Skenovať nohu':'👟 Skenovať topánku';
+  btn.onclick=startScan;
+  document.getElementById('doneOverlay').classList.remove('show');
+}
+
+function startScan(){
+  if(scanning) return;
+  scanning=true; scanProg=0; depthBlend=0;
+  document.getElementById('scanBtn').disabled=true;
+  document.getElementById('scanBtn').textContent='Skenujem…';
+
+  const cfg=modeConf[currentMode];
+  scanTimer=setInterval(()=>{
+    scanProg=Math.min(scanProg+(Math.random()*.028+.013),1);
+    depthBlend=Math.min(scanProg*1.6,1);
+
+    const pct=Math.round(scanProg*100);
+    document.getElementById('progFill').style.width=pct+'%';
+    document.getElementById('progPct').textContent=pct+'%';
+    const si=Math.min(Math.floor(scanProg*cfg.steps.length),cfg.steps.length-1);
+    document.getElementById('progLabel').textContent=cfg.steps[si];
+
+    if(scanProg>=1){
+      clearInterval(scanTimer);
+      scanning=false; scanDone=true;
+      setTimeout(()=>{
+        document.getElementById('doneTitle').textContent=cfg.okTitle;
+        document.getElementById('doneSub').textContent=cfg.okSub;
+        const nx=document.getElementById('doneNext');
+        nx.textContent=cfg.nextLabel;
+        nx.onclick=()=>{ document.getElementById('doneOverlay').classList.remove('show'); cfg.nextAction(); };
+        document.getElementById('doneOverlay').classList.add('show');
+        document.getElementById('scanBtn').className='scan-trigger done';
+        document.getElementById('scanBtn').textContent='✓ Hotovo';
+      },300);
+    }
+  },130);
+}
+</script>
+
+</body>
+</html>
