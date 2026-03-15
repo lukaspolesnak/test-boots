@@ -4,328 +4,704 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>FootScan LiDAR</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<title>FootScan — AI Shoe Fitting</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-:root{--c:#00e5ff;--p:#7c3aed;--g:#22c55e;--t:#f0f0f8;--t2:#8888aa}
+:root{--c:#00e5ff;--p:#7c3aed;--g:#22c55e;--t:#f0f0f8;--t2:#8888aa;--bg:#07070f}
 html,body{width:100%;height:100%;background:#000;font-family:'DM Sans',sans-serif;overflow:hidden;color:var(--t)}
 .screen{position:absolute;inset:0;display:none;flex-direction:column}
 .screen.active{display:flex}
 
-/* ── SPLASH ── */
+/* ════════════════════════════
+SPLASH
+════════════════════════════ */
 #splash{
-background:radial-gradient(ellipse at 55% 38%,#0d1f3c,#07070f 68%);
-align-items:center;justify-content:center;padding:40px 28px;text-align:center;
+background:radial-gradient(ellipse at 50% 35%,#0d1f3c 0%,#07070f 65%);
+align-items:center;justify-content:center;padding:36px 28px;text-align:center;gap:0;
 }
-.logo{font-family:‘Bebas Neue’,sans-serif;font-size:54px;letter-spacing:7px;background:linear-gradient(135deg,var(–c),var(–p));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px;animation:lp 3s ease-in-out infinite}
-@keyframes lp{0%,100%{filter:drop-shadow(0 0 16px rgba(0,229,255,.3))}50%{filter:drop-shadow(0 0 36px rgba(0,229,255,.7))}}
-.tagline{font-size:12px;color:var(–t2);letter-spacing:3px;text-transform:uppercase;margin-bottom:40px}
-.rings{position:relative;width:148px;height:148px;margin:0 auto 40px}
-.ring{position:absolute;inset:0;border-radius:50%;border:1px solid rgba(0,229,255,.2);animation:re 3s ease-out infinite}
-.ring:nth-child(2){animation-delay:.8s}.ring:nth-child(3){animation-delay:1.6s}
-@keyframes re{0%{transform:scale(.1);opacity:.9}100%{transform:scale(1.8);opacity:0}}
-.rc{position:absolute;inset:26px;border-radius:50%;background:rgba(0,229,255,.06);border:1.5px solid rgba(0,229,255,.4);display:flex;align-items:center;justify-content:center;font-size:36px}
-.infobox{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:14px 18px;margin-bottom:22px;text-align:left;display:flex;flex-direction:column;gap:9px;width:100%;max-width:310px}
-.ir{display:flex;gap:11px;align-items:flex-start}
-.ii{font-size:16px;flex-shrink:0;margin-top:1px}
-.it{font-size:12px;color:var(–t2);line-height:1.5}
-.it strong{color:var(–t);display:block}
-.sbtn{width:100%;max-width:310px;height:52px;border-radius:16px;border:none;background:linear-gradient(135deg,var(–p),var(–c));color:#fff;font-family:‘DM Sans’,sans-serif;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 8px 36px rgba(0,229,255,.22);transition:transform .15s}
-.sbtn:active{transform:scale(.97)}
+.logo{
+font-family:‘Bebas Neue’,sans-serif;font-size:58px;letter-spacing:8px;
+background:linear-gradient(135deg,var(–c),var(–p));
+-webkit-background-clip:text;-webkit-text-fill-color:transparent;
+animation:logoPulse 3s ease-in-out infinite;
+}
+@keyframes logoPulse{0%,100%{filter:drop-shadow(0 0 20px rgba(0,229,255,.3))}50%{filter:drop-shadow(0 0 45px rgba(0,229,255,.7))}}
+.tagline{font-size:12px;color:var(–t2);letter-spacing:4px;text-transform:uppercase;margin-bottom:38px}
 
-/* ── SCANNER ── */
-#scanner{background:#000;position:relative}
+.rings{position:relative;width:156px;height:156px;margin:0 auto 38px}
+.ring{position:absolute;inset:0;border-radius:50%;border:1px solid rgba(0,229,255,.18);animation:ringOut 3.2s ease-out infinite}
+.ring:nth-child(2){animation-delay:.9s}.ring:nth-child(3){animation-delay:1.8s}
+@keyframes ringOut{0%{transform:scale(.08);opacity:1}100%{transform:scale(1.9);opacity:0}}
+.rc{position:absolute;inset:28px;border-radius:50%;background:rgba(0,229,255,.05);border:2px solid rgba(0,229,255,.35);display:flex;align-items:center;justify-content:center;font-size:38px}
 
-/* VIDEO - iOS proven approach */
+.features{display:flex;flex-direction:column;gap:10px;width:100%;max-width:320px;margin-bottom:28px}
+.feat{display:flex;align-items:center;gap:14px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:12px 16px;text-align:left}
+.feat-icon{font-size:22px;flex-shrink:0}
+.feat-text strong{display:block;font-size:13px;color:var(–t);margin-bottom:1px}
+.feat-text span{font-size:11px;color:var(–t2);line-height:1.4}
+
+.start-btn{
+width:100%;max-width:320px;height:56px;border-radius:18px;border:none;
+background:linear-gradient(135deg,var(–p),var(–c));
+color:#fff;font-family:‘DM Sans’,sans-serif;font-size:16px;font-weight:700;
+cursor:pointer;letter-spacing:.5px;
+box-shadow:0 8px 40px rgba(0,229,255,.25);transition:transform .15s;
+}
+.start-btn:active{transform:scale(.97)}
+
+/* ════════════════════════════
+CAMERA / RECORD
+════════════════════════════ */
+#camera{background:#000;position:relative}
+
 #vid{
 position:absolute;inset:0;
 width:100vw;height:100vh;
 -webkit-transform:translateZ(0);
 transform:translateZ(0);
-background:#000;
 z-index:1;
 }
 
-/* CSS thermal overlay — no canvas pixel ops */
+/* Scan frame */
+#scanFrame{
+position:absolute;inset:0;z-index:3;pointer-events:none;
+display:flex;align-items:center;justify-content:center;
+}
+.frame-svg{width:300px;height:240px;overflow:visible}
+
+/* Thermal overlay */
 #thermal{
 position:absolute;inset:0;z-index:2;pointer-events:none;
-opacity:0;transition:opacity 1.2s ease;
+opacity:0;
 background:linear-gradient(180deg,
-rgba(255,20,20,.22)   0%,
-rgba(255,120,0,.18)  18%,
-rgba(255,220,0,.14)  36%,
-rgba(0,255,100,.12)  54%,
-rgba(0,160,255,.16)  72%,
-rgba(30,0,255,.20)  100%
+rgba(255,10,10,.22) 0%,rgba(255,100,0,.17) 20%,
+rgba(255,210,0,.13) 40%,rgba(0,255,90,.10) 55%,
+rgba(0,150,255,.15) 75%,rgba(20,0,255,.20) 100%
 );
 mix-blend-mode:screen;
+transition:opacity .6s;
 }
-#grid{
-position:absolute;inset:0;z-index:2;pointer-events:none;
-opacity:0;transition:opacity 1s;
-background-image:linear-gradient(rgba(0,229,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,.05) 1px,transparent 1px);
-background-size:20px 20px;
+#gridFx{
+position:absolute;inset:0;z-index:2;pointer-events:none;opacity:0;
+background-image:linear-gradient(rgba(0,229,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,.04) 1px,transparent 1px);
+background-size:22px 22px;transition:opacity .8s;
 }
 
-/* HUD canvas — brackets, scanline, badges only */
-#hud{position:absolute;inset:0;z-index:3;pointer-events:none}
+/* HUD canvas — brackets, scan line, point cloud */
+#hud{position:absolute;inset:0;z-index:4;pointer-events:none}
 
 /* Top bar */
-.htop{position:absolute;top:0;left:0;right:0;padding:50px 16px 14px;background:linear-gradient(to bottom,rgba(0,0,0,.75),transparent);display:flex;align-items:center;gap:10px;z-index:10;pointer-events:none}
-.htop>*{pointer-events:all}
-.bk{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff;font-size:18px}
-.bk:active{background:rgba(255,255,255,.2)}
-.htitle{font-family:‘Bebas Neue’,sans-serif;font-size:22px;letter-spacing:3px;background:linear-gradient(135deg,var(–c),#fff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.badge{margin-left:auto;background:rgba(0,229,255,.12);border:1px solid rgba(0,229,255,.3);border-radius:20px;padding:4px 10px;font-size:10px;font-weight:700;color:var(–c);text-transform:uppercase;letter-spacing:1.5px;display:flex;align-items:center;gap:5px}
-.bdot{width:6px;height:6px;border-radius:50%;background:var(–c);animation:bd 1.2s ease-in-out infinite}
-@keyframes bd{0%,100%{opacity:1}50%{opacity:.15}}
+.cam-top{
+position:absolute;top:0;left:0;right:0;padding:50px 18px 12px;
+background:linear-gradient(to bottom,rgba(0,0,0,.78),transparent);
+display:flex;align-items:center;gap:10px;z-index:10;
+}
+.bk{width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff;font-size:19px}
+.bk:active{background:rgba(255,255,255,.22)}
+.cam-title{font-family:‘Bebas Neue’,sans-serif;font-size:22px;letter-spacing:3px;background:linear-gradient(135deg,var(–c),#fff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.live-badge{margin-left:auto;background:rgba(255,50,50,.15);border:1px solid rgba(255,80,80,.4);border-radius:20px;padding:4px 10px;font-size:10px;font-weight:700;color:#ff6060;text-transform:uppercase;letter-spacing:1.5px;display:flex;align-items:center;gap:5px}
+.live-dot{width:6px;height:6px;border-radius:50%;background:#ff4444;animation:bd 1s ease-in-out infinite}
+.rec-badge{margin-left:auto;background:rgba(255,50,50,.2);border:1px solid rgba(255,80,80,.5);border-radius:20px;padding:4px 10px;font-size:10px;font-weight:700;color:#ff4444;text-transform:uppercase;letter-spacing:1.5px;display:flex;align-items:center;gap:5px;display:none}
+.rec-dot{width:6px;height:6px;border-radius:50%;background:#ff2222;animation:bd .6s ease-in-out infinite}
+@keyframes bd{0%,100%{opacity:1}50%{opacity:.1}}
 
-/* Bottom bar */
-.hbot{position:absolute;bottom:0;left:0;right:0;padding:14px 16px 38px;background:linear-gradient(to top,rgba(0,0,0,.9),transparent);z-index:10}
-.tabs{display:flex;gap:8px;margin-bottom:12px}
-.tab{flex:1;height:34px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);color:var(–t2);font-family:‘DM Sans’,sans-serif;font-size:11px;font-weight:600;cursor:pointer;text-transform:uppercase;letter-spacing:1px;transition:all .2s}
-.tab.on{background:rgba(0,229,255,.12);border-color:rgba(0,229,255,.35);color:var(–c)}
-.prow{display:flex;justify-content:space-between;margin-bottom:5px}
-.plbl{font-size:12px;font-weight:600;color:var(–t)}
-.ppct{font-size:12px;font-weight:700;color:var(–c)}
-.ptrack{height:3px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden;margin-bottom:12px}
-.pfill{height:100%;background:linear-gradient(90deg,var(–p),var(–c));border-radius:2px;width:0%;transition:width .3s;box-shadow:0 0 8px var(–c)}
-.abtn{width:100%;height:52px;border-radius:15px;border:none;font-family:‘DM Sans’,sans-serif;font-size:15px;font-weight:700;cursor:pointer;transition:all .2s;background:linear-gradient(135deg,var(–p),var(–c));color:#fff;box-shadow:0 6px 26px rgba(0,229,255,.2)}
-.abtn:active{transform:scale(.98)}
-.abtn.done{background:linear-gradient(135deg,#059669,var(–g));box-shadow:0 6px 26px rgba(34,197,94,.3)}
-.abtn:disabled{opacity:.4;cursor:not-allowed}
+/* Instruction */
+#instruct{
+position:absolute;z-index:10;
+top:110px;left:50%;transform:translateX(-50%);
+background:rgba(0,0,0,.65);border:1px solid rgba(0,229,255,.25);
+border-radius:22px;padding:7px 18px;
+font-size:12px;color:rgba(0,229,255,.9);
+white-space:nowrap;backdrop-filter:blur(10px);
+transition:opacity .4s;
+}
 
-/* Done overlay */
-.dov{position:absolute;inset:0;z-index:20;background:rgba(0,0,0,.82);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:13px;opacity:0;pointer-events:none;transition:opacity .4s}
-.dov.show{opacity:1;pointer-events:all}
-.oring{width:76px;height:76px;border-radius:50%;background:linear-gradient(135deg,#059669,var(–g));display:flex;align-items:center;justify-content:center;font-size:30px;box-shadow:0 0 48px rgba(34,197,94,.5);animation:pop .5s cubic-bezier(.34,1.56,.64,1) both}
-@keyframes pop{from{transform:scale(0)}to{transform:scale(1)}}
-.otit{font-size:21px;font-weight:700}
-.osub{font-size:13px;color:var(–t2);text-align:center;padding:0 28px}
-.onxt{margin-top:6px;padding:13px 34px;border-radius:13px;border:none;background:linear-gradient(135deg,var(–p),var(–c));color:#fff;font-family:‘DM Sans’,sans-serif;font-size:14px;font-weight:700;cursor:pointer}
+/* ── Recording timer ── */
+#recTimer{
+position:absolute;top:110px;left:50%;transform:translateX(-50%);
+z-index:10;display:none;
+background:rgba(180,0,0,.7);border:1px solid rgba(255,80,80,.5);
+border-radius:22px;padding:6px 20px;
+font-size:14px;font-weight:700;color:#fff;
+letter-spacing:2px;backdrop-filter:blur(10px);
+}
 
-/* ── 3D MODEL SCREEN ── */
-#model3d{background:#07070f;position:relative;overflow:hidden}
-.m3top{position:absolute;top:0;left:0;right:0;padding:50px 16px 14px;background:linear-gradient(to bottom,rgba(0,0,0,.8),transparent);display:flex;align-items:center;gap:10px;z-index:10}
-.m3title{font-family:‘Bebas Neue’,sans-serif;font-size:22px;letter-spacing:3px;background:linear-gradient(135deg,var(–c),#fff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+/* ── Bottom controls ── */
+.cam-bottom{
+position:absolute;bottom:0;left:0;right:0;
+padding:20px 28px 46px;
+background:linear-gradient(to top,rgba(0,0,0,.9),transparent);
+z-index:10;
+display:flex;align-items:center;justify-content:space-between;
+}
 
-/* Three.js canvas fills screen */
+/* Mode switch */
+.mode-switch{
+display:flex;flex-direction:column;gap:6px;align-items:center;
+}
+.mode-btn{
+width:56px;height:28px;border-radius:8px;border:1px solid rgba(255,255,255,.15);
+background:rgba(255,255,255,.06);color:var(–t2);
+font-family:‘DM Sans’,sans-serif;font-size:10px;font-weight:600;
+cursor:pointer;transition:all .2s;text-transform:uppercase;letter-spacing:.5px;
+}
+.mode-btn.on{background:rgba(0,229,255,.15);border-color:rgba(0,229,255,.4);color:var(–c)}
+
+/* Big record button */
+.rec-wrap{display:flex;flex-direction:column;align-items:center;gap:8px}
+#recBtn{
+width:80px;height:80px;border-radius:50%;border:none;
+background:transparent;cursor:pointer;position:relative;
+-webkit-tap-highlight-color:transparent;
+}
+#recBtn::after{
+content:’’;position:absolute;inset:0;border-radius:50%;
+border:4px solid rgba(255,255,255,.8);
+}
+#recBtn .inner{
+position:absolute;inset:6px;border-radius:50%;
+background:#fff;transition:all .2s;
+}
+#recBtn.recording .inner{
+border-radius:10px;background:#ff2222;
+inset:18px;
+}
+#recBtn:active .inner{transform:scale(.9)}
+.rec-label{font-size:11px;color:var(–t2);text-transform:uppercase;letter-spacing:1px}
+
+/* Shot counter / timer */
+.counter-wrap{display:flex;flex-direction:column;align-items:center;gap:4px;width:56px}
+#shotCount{font-size:28px;font-weight:700;color:var(–t);line-height:1}
+.count-lbl{font-size:9px;color:var(–t2);text-transform:uppercase;letter-spacing:.8px}
+
+/* Progress dots */
+#progDots{
+position:absolute;bottom:146px;left:50%;transform:translateX(-50%);
+display:flex;gap:8px;z-index:10;
+}
+.pdot{width:7px;height:7px;border-radius:3.5px;background:rgba(255,255,255,.2);transition:all .35s}
+.pdot.done{background:var(–g);width:18px}
+.pdot.active{background:var(–c);width:18px;box-shadow:0 0 8px var(–c)}
+
+/* ════════════════════════════
+PROCESSING
+════════════════════════════ */
+#processing{
+background:#000;
+align-items:center;justify-content:center;
+flex-direction:column;gap:0;
+padding:40px 28px;text-align:center;
+}
+
+.proc-video-wrap{
+width:180px;height:180px;border-radius:24px;overflow:hidden;
+border:2px solid rgba(0,229,255,.3);
+margin-bottom:32px;position:relative;
+box-shadow:0 0 40px rgba(0,229,255,.15);
+}
+.proc-video-wrap video{width:100%;height:100%;object-fit:cover}
+.proc-video-wrap::after{
+content:’’;position:absolute;inset:0;
+background:linear-gradient(180deg,rgba(255,10,10,.2),rgba(0,150,255,.2),rgba(20,0,200,.2));
+mix-blend-mode:screen;
+animation:thermalShift 2s ease-in-out infinite alternate;
+}
+@keyframes thermalShift{0%{opacity:.4}100%{opacity:.9}}
+
+.proc-title{font-family:‘Bebas Neue’,sans-serif;font-size:32px;letter-spacing:4px;color:var(–t);margin-bottom:6px}
+.proc-sub{font-size:13px;color:var(–t2);margin-bottom:28px}
+
+.proc-step{
+font-size:13px;font-weight:600;color:var(–c);
+height:20px;margin-bottom:12px;
+animation:stepFade .4s ease;
+}
+@keyframes stepFade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+
+.proc-track{width:260px;height:4px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden;margin-bottom:8px}
+.proc-fill{height:100%;background:linear-gradient(90deg,var(–p),var(–c));border-radius:2px;width:0%;transition:width .4s ease;box-shadow:0 0 10px var(–c)}
+.proc-pct{font-size:22px;font-weight:700;color:var(–t);margin-bottom:28px}
+
+/* Scanning animation grid */
+.scan-grid{
+display:grid;grid-template-columns:repeat(4,1fr);gap:6px;
+width:260px;margin-bottom:0;
+}
+.scan-cell{
+height:36px;border-radius:6px;
+background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);
+transition:all .3s;
+display:flex;align-items:center;justify-content:center;
+font-size:9px;color:var(–t2);text-transform:uppercase;letter-spacing:.5px;
+}
+.scan-cell.active{background:rgba(0,229,255,.1);border-color:rgba(0,229,255,.3);color:var(–c)}
+.scan-cell.done{background:rgba(34,197,94,.08);border-color:rgba(34,197,94,.25);color:var(–g)}
+
+/* ════════════════════════════
+3D MODEL
+════════════════════════════ */
+#model3d{background:var(–bg);position:relative;overflow:hidden}
+
 #threeCanvas{position:absolute;inset:0;width:100%!important;height:100%!important;z-index:1}
 
-/* Measurements panel */
-.mpanel{
+.m3top{
+position:absolute;top:0;left:0;right:0;
+padding:50px 18px 12px;
+background:linear-gradient(to bottom,rgba(0,0,0,.8),transparent);
+display:flex;align-items:center;gap:10px;z-index:10;
+}
+.m3title{font-family:‘Bebas Neue’,sans-serif;font-size:22px;letter-spacing:3px;background:linear-gradient(135deg,var(–c),#fff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.m3badge{margin-left:auto;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.3);border-radius:20px;padding:4px 10px;font-size:10px;font-weight:700;color:var(–g);text-transform:uppercase;letter-spacing:1px}
+
+.drag-hint{
+position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+z-index:8;pointer-events:none;opacity:0;transition:opacity .5s;
+background:rgba(0,0,0,.6);border:1px solid rgba(0,229,255,.25);
+border-radius:22px;padding:8px 18px;
+font-size:12px;color:rgba(0,229,255,.85);letter-spacing:1px;
+backdrop-filter:blur(8px);
+}
+.drag-hint.show{opacity:1}
+
+.photo-strip{
+position:absolute;top:106px;right:12px;z-index:10;
+display:flex;flex-direction:column;gap:6px;
+}
+.pthumb{
+width:50px;height:50px;border-radius:8px;overflow:hidden;
+border:2px solid rgba(0,229,255,.35);
+box-shadow:0 2px 10px rgba(0,0,0,.6);
+background:#000;
+}
+.pthumb img{width:100%;height:100%;object-fit:cover;display:block}
+
+.m3panel{
 position:absolute;bottom:0;left:0;right:0;
-padding:16px 16px 36px;
-background:linear-gradient(to top,rgba(0,0,0,.95) 60%,transparent);
+padding:14px 16px 36px;
+background:linear-gradient(to top,rgba(0,0,0,.96) 55%,transparent);
 z-index:10;
 }
-.mstrip{display:flex;gap:8px;margin-bottom:14px}
-.mbox{flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:9px 6px;text-align:center}
-.mv{font-size:15px;font-weight:700}
-.ml{font-size:9px;color:var(–t2);text-transform:uppercase;letter-spacing:.7px;margin-top:2px}
-.gores{width:100%;height:50px;border-radius:14px;border:none;background:linear-gradient(135deg,var(–p),var(–c));color:#fff;font-family:‘DM Sans’,sans-serif;font-size:15px;font-weight:700;cursor:pointer}
+.mstrip{display:flex;gap:7px;margin-bottom:12px}
+.mbox{flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:9px 5px;text-align:center}
+.mv{font-size:14px;font-weight:700}.ml{font-size:8px;color:var(–t2);text-transform:uppercase;letter-spacing:.6px;margin-top:2px}
+.goto-results{width:100%;height:52px;border-radius:14px;border:none;background:linear-gradient(135deg,var(–p),var(–c));color:#fff;font-family:‘DM Sans’,sans-serif;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 6px 24px rgba(0,229,255,.2)}
 
-/* Rotation hint */
-.rhint{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:5;pointer-events:none;opacity:0;transition:opacity .5s;text-align:center}
-.rhint.show{opacity:1}
-.rhint span{font-size:12px;color:rgba(0,229,255,.7);letter-spacing:1px}
-
-/* ── RESULTS ── */
-#results{background:#07070f;overflow-y:auto}
+/* ════════════════════════════
+RESULTS
+════════════════════════════ */
+#results{background:var(–bg);overflow-y:auto}
 .rh{display:flex;align-items:center;gap:12px;padding:50px 20px 10px;flex-shrink:0}
 .rtit{font-family:‘Bebas Neue’,sans-serif;font-size:24px;letter-spacing:3px}
-.ms2{display:flex;gap:8px;padding:0 20px 12px;flex-shrink:0}
-.mb2{flex:1;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:9px 6px;text-align:center}
-.mv2{font-size:15px;font-weight:700}
-.ml2{font-size:9px;color:var(–t2);text-transform:uppercase;letter-spacing:.7px;margin-top:2px}
-.sc{margin:0 20px 10px;background:linear-gradient(135deg,#0d1f3c,#0a1020);border:1px solid rgba(0,229,255,.18);border-radius:18px;padding:16px;position:relative;overflow:hidden}
-.sc::after{content:’’;position:absolute;top:-28px;right:-28px;width:90px;height:90px;background:var(–c);border-radius:50%;filter:blur(38px);opacity:.07}
-.scr{display:flex;align-items:center;gap:12px;margin-bottom:12px}
-.srng{width:64px;height:64px;border-radius:50%;flex-shrink:0;background:conic-gradient(var(–c) 324deg,rgba(255,255,255,.05) 0);display:flex;align-items:center;justify-content:center;position:relative}
-.srng::before{content:’’;position:absolute;inset:5px;background:#0d1f3c;border-radius:50%}
-.snum{position:relative;font-size:17px;font-weight:800;color:var(–c)}
-.sn{font-size:17px;font-weight:700}.sb{font-size:11px;color:var(–t2)}.ss{font-size:10px;color:var(–c);margin-top:2px;font-weight:600}
-.fbs{display:flex;flex-direction:column;gap:6px}
-.fbr{display:flex;align-items:center;gap:8px}
-.fbl{font-size:11px;color:var(–t2);width:52px;flex-shrink:0}
-.fbt{flex:1;height:4px;background:rgba(255,255,255,.07);border-radius:2px;overflow:hidden}
-.fbf{height:100%;border-radius:2px;background:linear-gradient(90deg,var(–p),var(–c))}
-.fbv{font-size:11px;font-weight:700;width:26px;text-align:right}
-.sl{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(–t2);font-weight:600;padding:4px 20px 7px}
-.shl{padding:0 20px;display:flex;flex-direction:column;gap:8px;padding-bottom:30px}
-.sr{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:13px;padding:11px 13px;display:flex;align-items:center;gap:11px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
-.sr.top{border-color:rgba(0,229,255,.25);background:linear-gradient(135deg,#0d1f3c,#0a1020)}
-.sr:active{transform:scale(.98)}
-.si{width:48px;height:48px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
-.s1{background:rgba(0,229,255,.08)}.s2{background:rgba(124,58,237,.1)}.s3{background:rgba(245,158,11,.1)}.s4{background:rgba(239,68,68,.08)}
-.sif{flex:1;min-width:0}
-.sn2{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.sb2{font-size:11px;color:var(–t2)}
-.st2{display:flex;gap:4px;margin-top:3px;flex-wrap:wrap}
+.ms2{display:flex;gap:7px;padding:0 20px 12px;flex-shrink:0}
+.mb2{flex:1;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:9px 5px;text-align:center}
+.mv2{font-size:14px;font-weight:700}.ml2{font-size:8px;color:var(–t2);text-transform:uppercase;letter-spacing:.6px;margin-top:2px}
+
+.score-card{margin:0 20px 12px;background:linear-gradient(135deg,#0d1f3c,#0a1020);border:1px solid rgba(0,229,255,.2);border-radius:20px;padding:18px;position:relative;overflow:hidden}
+.score-card::after{content:’’;position:absolute;top:-30px;right:-30px;width:100px;height:100px;background:var(–c);border-radius:50%;filter:blur(40px);opacity:.08}
+.scrow{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+.scring{width:66px;height:66px;border-radius:50%;flex-shrink:0;background:conic-gradient(var(–c) 324deg,rgba(255,255,255,.05) 0);display:flex;align-items:center;justify-content:center;position:relative}
+.scring::before{content:’’;position:absolute;inset:5px;background:#0d1f3c;border-radius:50%}
+.scnum{position:relative;font-size:17px;font-weight:800;color:var(–c)}
+.scname{font-size:17px;font-weight:700}.scbrand{font-size:11px;color:var(–t2)}.scsize{font-size:10px;color:var(–c);margin-top:2px;font-weight:600}
+.fbars{display:flex;flex-direction:column;gap:6px}
+.fbrow{display:flex;align-items:center;gap:8px}
+.fblbl{font-size:11px;color:var(–t2);width:52px;flex-shrink:0}
+.fbtrack{flex:1;height:4px;background:rgba(255,255,255,.07);border-radius:2px;overflow:hidden}
+.fbfill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(–p),var(–c))}
+.fbval{font-size:11px;font-weight:700;width:26px;text-align:right}
+
+.sec-lbl{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(–t2);font-weight:600;padding:4px 20px 8px}
+.shoe-list{padding:0 20px;display:flex;flex-direction:column;gap:8px;padding-bottom:32px}
+.srow{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:13px;padding:11px 13px;display:flex;align-items:center;gap:11px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+.srow.top{border-color:rgba(0,229,255,.25);background:linear-gradient(135deg,#0d1f3c,#0a1020)}
+.srow:active{transform:scale(.98)}
+.sico{width:48px;height:48px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.sc1{background:rgba(0,229,255,.08)}.sc2{background:rgba(124,58,237,.1)}.sc3{background:rgba(245,158,11,.1)}.sc4{background:rgba(239,68,68,.08)}
+.sinf{flex:1;min-width:0}
+.snm{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sbrnd{font-size:11px;color:var(–t2)}
+.stgs{display:flex;gap:4px;margin-top:3px;flex-wrap:wrap}
 .tg{font-size:9px;font-weight:600;padding:2px 6px;border-radius:9px;text-transform:uppercase;letter-spacing:.5px}
 .tg.s{background:rgba(0,229,255,.1);color:var(–c)}.tg.f{background:rgba(34,197,94,.1);color:var(–g)}.tg.b{background:rgba(255,255,255,.06);color:var(–t2)}
-.sp{font-size:13px;font-weight:800;background:rgba(255,255,255,.07);border-radius:8px;padding:4px 8px;flex-shrink:0}
-.tp{position:absolute;top:8px;right:8px;background:linear-gradient(135deg,var(–p),var(–c));color:#fff;font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1px;padding:2px 7px;border-radius:18px}
+.spill{font-size:13px;font-weight:800;background:rgba(255,255,255,.07);border-radius:8px;padding:4px 8px;flex-shrink:0}
+.tpill{position:absolute;top:8px;right:8px;background:linear-gradient(135deg,var(–p),var(–c));color:#fff;font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1px;padding:2px 7px;border-radius:18px}
+
+.restart-btn{margin:0 20px 30px;width:calc(100% - 40px);height:48px;border-radius:14px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:var(–t2);font-family:‘DM Sans’,sans-serif;font-size:14px;font-weight:600;cursor:pointer}
 </style>
 
 </head>
 <body>
 
-<!-- SPLASH -->
+<!-- ══ SPLASH ══ -->
 
 <div id="splash" class="screen active">
   <div class="logo">FOOTSCAN</div>
-  <div class="tagline">LiDAR · AI · Perfect Fit</div>
+  <div class="tagline">AI · LiDAR · Perfect Fit</div>
   <div class="rings"><div class="ring"></div><div class="ring"></div><div class="ring"></div><div class="rc">🦶</div></div>
-  <div class="infobox">
-    <div class="ir"><div class="ii">📷</div><div class="it"><strong>Živá kamera</strong>Sfotografuj nohu — vytvoríme 3D model.</div></div>
-    <div class="ir"><div class="ii">🌈</div><div class="it"><strong>Depth vizualizácia</strong>Termálny overlay + interaktívny 3D model.</div></div>
-    <div class="ir"><div class="ii">👟</div><div class="it"><strong>AI Matching</strong>Nájdeme topánky s najlepším fitom.</div></div>
+  <div class="features">
+    <div class="feat"><div class="feat-icon">🎥</div><div class="feat-text"><strong>Nahraj 5s video nohy</strong><span>AI analyzuje tvar, dĺžku, šírku a klenbu chodidla</span></div></div>
+    <div class="feat"><div class="feat-icon">🦶</div><div class="feat-text"><strong>3D model v reálnom čase</strong><span>Presná vizualizácia tvojho chodidla s meraniami</span></div></div>
+    <div class="feat"><div class="feat-icon">👟</div><div class="feat-text"><strong>AI Fit Matching</strong><span>Porovnanie s databázou 10 000+ topánok</span></div></div>
   </div>
-  <button class="sbtn" onclick="startApp()">Spustiť & povoliť kameru</button>
+  <button class="start-btn" onclick="initCamera()">Začať skenovanie →</button>
 </div>
 
-<!-- SCANNER -->
+<!-- ══ CAMERA ══ -->
 
-<div id="scanner" class="screen">
-  <div id="wrap" style="position:absolute;inset:0">
-    <video id="vid" autoplay playsinline muted style="position:absolute;inset:0;width:100vw;height:100vh;-webkit-transform:translateZ(0);transform:translateZ(0);z-index:1"></video>
-  </div>
+<div id="camera" class="screen">
+  <video id="vid" autoplay playsinline muted></video>
   <div id="thermal"></div>
-  <div id="grid"></div>
+  <div id="gridFx"></div>
   <canvas id="hud"></canvas>
 
-  <div class="htop">
+  <div class="cam-top">
     <div class="bk" onclick="stopAll()">←</div>
-    <div class="htitle">FOOTSCAN</div>
-    <div class="badge"><div class="bdot"></div>LIVE</div>
+    <div class="cam-title">FOOTSCAN</div>
+    <div class="live-badge" id="liveBadge"><div class="live-dot"></div>LIVE</div>
+    <div class="rec-badge"  id="recBadge" ><div class="rec-dot"></div>REC</div>
   </div>
 
-  <div class="hbot">
-    <div class="tabs">
-      <button class="tab on" id="tFoot" onclick="setMode('foot')">🦶 Noha</button>
-      <button class="tab"    id="tShoe" onclick="setMode('shoe')">👟 Topánka</button>
+  <div id="instruct">📱 Umiestni nohu do rámu a stlač ●</div>
+  <div id="recTimer">● 0:00</div>
+
+  <div id="progDots">
+    <div class="pdot active" id="pd0"></div>
+    <div class="pdot"        id="pd1"></div>
+    <div class="pdot"        id="pd2"></div>
+  </div>
+
+  <div class="cam-bottom">
+    <!-- Mode -->
+    <div class="mode-switch">
+      <button class="mode-btn on" id="mFoot" onclick="switchMode('foot')">🦶 Noha</button>
+      <button class="mode-btn"    id="mShoe" onclick="switchMode('shoe')">👟 Topánka</button>
     </div>
-    <div class="prow"><span class="plbl" id="plbl">Umiestni nohu do rámu</span><span class="ppct" id="ppct">0%</span></div>
-    <div class="ptrack"><div class="pfill" id="pfill"></div></div>
-    <button class="abtn" id="abtn" onclick="startScan()">📸 Skenovať nohu</button>
-  </div>
 
-  <div class="dov" id="dov">
-    <div class="oring">✓</div>
-    <div class="otit" id="dtit">Hotovo!</div>
-    <div class="osub" id="dsub"></div>
-    <button class="onxt" id="dnxt">Ďalej →</button>
+```
+<!-- Big record button -->
+<div class="rec-wrap">
+  <button id="recBtn" onclick="toggleRecord()"><div class="inner"></div></button>
+  <div class="rec-label" id="recLabel">Nahrať video</div>
+</div>
+
+<!-- Counter -->
+<div class="counter-wrap">
+  <div id="shotCount">0</div>
+  <div class="count-lbl">videí</div>
+</div>
+```
+
   </div>
 </div>
 
-<!-- 3D MODEL -->
+<!-- ══ PROCESSING ══ -->
+
+<div id="processing" class="screen">
+  <div class="proc-video-wrap">
+    <video id="procVid" autoplay playsinline muted loop></video>
+  </div>
+  <div class="proc-title">ANALYZUJEM</div>
+  <div class="proc-sub">AI spracováva video nohy…</div>
+  <div class="proc-step" id="procStep">Inicializujem model…</div>
+  <div class="proc-track"><div class="proc-fill" id="procFill"></div></div>
+  <div class="proc-pct" id="procPct">0%</div>
+  <div class="scan-grid" id="scanGrid">
+    <div class="scan-cell" id="sc0">Dĺžka</div>
+    <div class="scan-cell" id="sc1">Šírka</div>
+    <div class="scan-cell" id="sc2">Výška</div>
+    <div class="scan-cell" id="sc3">Klenba</div>
+    <div class="scan-cell" id="sc4">Objem</div>
+    <div class="scan-cell" id="sc5">Prsty</div>
+    <div class="scan-cell" id="sc6">Päta</div>
+    <div class="scan-cell" id="sc7">3D mesh</div>
+  </div>
+</div>
+
+<!-- ══ 3D MODEL ══ -->
 
 <div id="model3d" class="screen">
   <canvas id="threeCanvas"></canvas>
-  <div class="rhint" id="rhint"><span>↔ Potiahnite pre rotáciu</span></div>
+  <div class="drag-hint" id="dragHint">↔ Potiahnite pre rotáciu</div>
 
   <div class="m3top">
-    <div class="bk" onclick="goTo('scanner');reset()">←</div>
+    <div class="bk" onclick="goTo('camera')">←</div>
     <div class="m3title">3D MODEL NOHY</div>
+    <div class="m3badge">✓ Naskenované</div>
   </div>
 
-  <div class="mpanel">
+  <div class="photo-strip" id="photoStrip"></div>
+
+  <div class="m3panel">
     <div class="mstrip">
-      <div class="mbox"><div class="mv" style="color:var(--c)">26.3<small style="font-size:9px">cm</small></div><div class="ml">Dĺžka</div></div>
-      <div class="mbox"><div class="mv" style="color:var(--c)">9.8<small style="font-size:9px">cm</small></div><div class="ml">Šírka</div></div>
+      <div class="mbox"><div class="mv" style="color:var(--c)">26.3<small style="font-size:8px">cm</small></div><div class="ml">Dĺžka</div></div>
+      <div class="mbox"><div class="mv" style="color:var(--c)">9.8<small style="font-size:8px">cm</small></div><div class="ml">Šírka</div></div>
       <div class="mbox"><div class="mv" style="color:#a78bfa">EU 41</div><div class="ml">Veľkosť</div></div>
       <div class="mbox"><div class="mv" style="font-size:11px;color:#fbbf24">Stredná</div><div class="ml">Klenba</div></div>
+      <div class="mbox"><div class="mv" style="color:var(--g)">98%</div><div class="ml">Presnosť</div></div>
     </div>
-    <button class="gores" onclick="goTo('results')">📊 Zobraziť odporúčania topánok →</button>
+    <button class="goto-results" onclick="goTo('results')">📊 Zobraziť odporúčania topánok →</button>
   </div>
 </div>
 
-<!-- RESULTS -->
+<!-- ══ RESULTS ══ -->
 
 <div id="results" class="screen">
   <div class="rh"><div class="bk" onclick="goTo('model3d')">←</div><div class="rtit">FIT ANALÝZA</div></div>
   <div class="ms2">
-    <div class="mb2"><div class="mv2" style="color:var(--c)">26.3<small style="font-size:9px">cm</small></div><div class="ml2">Dĺžka</div></div>
-    <div class="mb2"><div class="mv2" style="color:var(--c)">9.8<small style="font-size:9px">cm</small></div><div class="ml2">Šírka</div></div>
+    <div class="mb2"><div class="mv2" style="color:var(--c)">26.3</div><div class="ml2">Dĺžka cm</div></div>
+    <div class="mb2"><div class="mv2" style="color:var(--c)">9.8</div><div class="ml2">Šírka cm</div></div>
     <div class="mb2"><div class="mv2" style="color:#a78bfa">EU 41</div><div class="ml2">Veľkosť</div></div>
     <div class="mb2"><div class="mv2" style="font-size:11px;color:#fbbf24">Stredná</div><div class="ml2">Klenba</div></div>
   </div>
-  <div class="sc">
+  <div class="score-card">
     <div style="font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--t2);margin-bottom:10px;font-weight:600">⭐ Najlepší match</div>
-    <div class="scr">
-      <div class="srng"><div class="snum">90%</div></div>
-      <div><div class="sn">Air Max 90 GTX</div><div class="sb">Nike · Bežecká · Outdoor</div><div class="ss">Odporúčaná veľkosť: EU 41</div></div>
+    <div class="scrow">
+      <div class="scring"><div class="scnum">90%</div></div>
+      <div><div class="scname">Air Max 90 GTX</div><div class="scbrand">Nike · Bežecká · Outdoor</div><div class="scsize">Odporúčaná veľkosť: EU 41</div></div>
     </div>
-    <div class="fbs">
-      <div class="fbr"><div class="fbl">Dĺžka</div><div class="fbt"><div class="fbf" style="width:94%"></div></div><div class="fbv">94%</div></div>
-      <div class="fbr"><div class="fbl">Šírka</div><div class="fbt"><div class="fbf" style="width:88%"></div></div><div class="fbv">88%</div></div>
-      <div class="fbr"><div class="fbl">Klenba</div><div class="fbt"><div class="fbf" style="width:82%"></div></div><div class="fbv">82%</div></div>
-      <div class="fbr"><div class="fbl">Objem</div><div class="fbt"><div class="fbf" style="width:91%"></div></div><div class="fbv">91%</div></div>
+    <div class="fbars">
+      <div class="fbrow"><div class="fblbl">Dĺžka</div><div class="fbtrack"><div class="fbfill" style="width:94%"></div></div><div class="fbval">94%</div></div>
+      <div class="fbrow"><div class="fblbl">Šírka</div><div class="fbtrack"><div class="fbfill" style="width:88%"></div></div><div class="fbval">88%</div></div>
+      <div class="fbrow"><div class="fblbl">Klenba</div><div class="fbtrack"><div class="fbfill" style="width:82%"></div></div><div class="fbval">82%</div></div>
+      <div class="fbrow"><div class="fblbl">Objem</div><div class="fbtrack"><div class="fbfill" style="width:91%"></div></div><div class="fbval">91%</div></div>
     </div>
   </div>
-  <div class="sl">Ďalšie odporúčania</div>
-  <div class="shl">
-    <div class="sr top"><div class="tp">TOP</div><div class="si s1">👟</div><div class="sif"><div class="sn2">Air Max 90 GTX</div><div class="sb2">Nike · €149.99</div><div class="st2"><span class="tg s">EU 41</span><span class="tg f">Ideálny fit</span><span class="tg b">Nike</span></div></div><div class="sp">90%</div></div>
-    <div class="sr"><div class="si s2">👞</div><div class="sif"><div class="sn2">Ultraboost 22</div><div class="sb2">Adidas · €179.00</div><div class="st2"><span class="tg s">EU 41</span><span class="tg f">Dobrý fit</span><span class="tg b">Adidas</span></div></div><div class="sp">84%</div></div>
-    <div class="sr"><div class="si s3">🥾</div><div class="sif"><div class="sn2">Fresh Foam X 1080</div><div class="sb2">New Balance · €164.95</div><div class="st2"><span class="tg s">EU 41.5</span><span class="tg f">Dobrý fit</span><span class="tg b">NB</span></div></div><div class="sp">79%</div></div>
-    <div class="sr"><div class="si s4">🏃</div><div class="sif"><div class="sn2">Gel-Kayano 30</div><div class="sb2">ASICS · €189.00</div><div class="st2"><span class="tg s">EU 41</span><span class="tg b">ASICS</span></div></div><div class="sp">74%</div></div>
+  <div class="sec-lbl">Ďalšie odporúčania</div>
+  <div class="shoe-list">
+    <div class="srow top"><div class="tpill">TOP</div><div class="sico sc1">👟</div><div class="sinf"><div class="snm">Air Max 90 GTX</div><div class="sbrnd">Nike · €149.99</div><div class="stgs"><span class="tg s">EU 41</span><span class="tg f">Ideálny fit</span><span class="tg b">Nike</span></div></div><div class="spill">90%</div></div>
+    <div class="srow"><div class="sico sc2">👞</div><div class="sinf"><div class="snm">Ultraboost 22</div><div class="sbrnd">Adidas · €179.00</div><div class="stgs"><span class="tg s">EU 41</span><span class="tg f">Dobrý fit</span><span class="tg b">Adidas</span></div></div><div class="spill">84%</div></div>
+    <div class="srow"><div class="sico sc3">🥾</div><div class="sinf"><div class="snm">Fresh Foam X 1080</div><div class="sbrnd">New Balance · €164.95</div><div class="stgs"><span class="tg s">EU 41.5</span><span class="tg f">Dobrý fit</span><span class="tg b">NB</span></div></div><div class="spill">79%</div></div>
+    <div class="srow"><div class="sico sc4">🏃</div><div class="sinf"><div class="snm">Gel-Kayano 30</div><div class="sbrnd">ASICS · €189.00</div><div class="stgs"><span class="tg s">EU 41</span><span class="tg b">ASICS</span></div></div><div class="spill">74%</div></div>
   </div>
+  <button class="restart-btn" onclick="restart()">↩ Nové skenovanie</button>
 </div>
-
-<!-- Three.js -->
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
 <script>
 // ── NAV ──
-function goTo(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
+function goTo(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
 
-let stream, rafId, appT=0, lastTS=null;
-let scanning=false, scanDone=false, prog=0, scanLineY=0, scanTimer=null;
-let mode='foot';
+// ── STATE ──
+let vidStream=null, mediaRec=null, rafId=null;
+let appT=0, lastTS=null;
+let isRecording=false, recSeconds=0, recTimer=null;
+let currentMode='foot', shotsDone=0;
+let capturedBlob=null, thumbDataURLs=[];
 
-function stopAll(){ if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;} cancelAnimationFrame(rafId); goTo('splash'); }
+// ── CAMERA INIT ──
+async function initCamera(){
+  goTo('camera');
+  const hud=document.getElementById('hud');
+  hud.width=window.innerWidth; hud.height=window.innerHeight;
+  window.addEventListener('resize',()=>{hud.width=window.innerWidth;hud.height=window.innerHeight;});
 
-// ── CAMERA ──
-async function startApp(){
-  goTo('scanner');
-  const hud = document.getElementById('hud');
-  hud.width = window.innerWidth; hud.height = window.innerHeight;
-  window.addEventListener('resize',()=>{ hud.width=window.innerWidth; hud.height=window.innerHeight; });
-
-  try {
-    stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:{ideal:'environment'} }, audio:false });
-    const vid = document.getElementById('vid');
-    vid.srcObject = stream;
-    vid.muted = true;
-    const p = vid.play();
-    if(p) p.catch(()=>setTimeout(()=>vid.play(),300));
-    // iOS black screen fix
-    setTimeout(()=>{ vid.style.opacity='.99'; setTimeout(()=>vid.style.opacity='1',50); },400);
-  } catch(e){ console.warn('cam',e); }
+  try{
+    vidStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});
+    const v=document.getElementById('vid');
+    v.srcObject=vidStream; v.muted=true;
+    const pp=v.play(); if(pp) pp.catch(()=>setTimeout(()=>v.play(),300));
+    setTimeout(()=>{v.style.opacity='.99';setTimeout(()=>v.style.opacity='1',50);},400);
+  }catch(e){console.warn(e);}
 
   cancelAnimationFrame(rafId); lastTS=null;
-  rafId = requestAnimationFrame(loop);
+  rafId=requestAnimationFrame(hudLoop);
 }
 
-// ── HUD LOOP ──
-const hudCtx = ()=>document.getElementById('hud').getContext('2d');
+function stopAll(){
+  if(vidStream){vidStream.getTracks().forEach(t=>t.stop());vidStream=null;}
+  cancelAnimationFrame(rafId);
+  stopRecording(false);
+  goTo('splash');
+}
+function restart(){
+  shotsDone=0; thumbDataURLs=[];
+  document.getElementById('shotCount').textContent='0';
+  document.getElementById('photoStrip').innerHTML='';
+  updateDots();
+  initCamera();
+}
 
-function loop(ts){
-  rafId=requestAnimationFrame(loop);
+// ── MODE SWITCH ──
+function switchMode(m){
+  currentMode=m;
+  document.getElementById('mFoot').classList.toggle('on',m==='foot');
+  document.getElementById('mShoe').classList.toggle('on',m==='shoe');
+  const inst=document.getElementById('instruct');
+  inst.textContent=m==='foot'?'📱 Umiestni nohu do rámu a stlač ●':'📱 Umiestni topánku do rámu a stlač ●';
+  updateDots();
+}
+
+// ── DOTS ──
+function updateDots(){
+  [0,1,2].forEach(i=>{
+    const d=document.getElementById('pd'+i);
+    d.className='pdot';
+    if(i<shotsDone) d.classList.add('done');
+    else if(i===shotsDone) d.classList.add('active');
+  });
+}
+
+// ── RECORD ──
+function toggleRecord(){
+  if(isRecording) stopRecording(true);
+  else startRecording();
+}
+
+function startRecording(){
+  if(!vidStream) return;
+  isRecording=true; recSeconds=0;
+  const btn=document.getElementById('recBtn');
+  btn.classList.add('recording');
+  document.getElementById('recLabel').textContent='Zastaviť';
+  document.getElementById('liveBadge').style.display='none';
+  document.getElementById('recBadge').style.display='flex';
+  document.getElementById('instruct').style.opacity='0';
+  document.getElementById('recTimer').style.display='block';
+
+  // Activate thermal during recording
+  document.getElementById('thermal').style.opacity='0.6';
+  document.getElementById('gridFx').style.opacity='1';
+
+  // MediaRecorder
+  try{
+    const chunks=[];
+    mediaRec=new MediaRecorder(vidStream,{mimeType:'video/mp4;codecs=avc1'});
+    mediaRec.ondataavailable=e=>{if(e.data.size>0)chunks.push(e.data);};
+    mediaRec.onstop=()=>{ capturedBlob=new Blob(chunks,{type:'video/mp4'}); };
+    mediaRec.start();
+  }catch(e){
+    // fallback — no MediaRecorder support
+    capturedBlob=null;
+  }
+
+  // Timer
+  recTimer=setInterval(()=>{
+    recSeconds++;
+    const s=recSeconds%60, m=Math.floor(recSeconds/60);
+    document.getElementById('recTimer').textContent=`● ${m}:${s<10?'0'+s:s}`;
+    // Auto-stop at 6 seconds
+    if(recSeconds>=6) stopRecording(true);
+  },1000);
+}
+
+function stopRecording(save){
+  if(!isRecording) return;
+  isRecording=false;
+  clearInterval(recTimer);
+  if(mediaRec && mediaRec.state!=='inactive') mediaRec.stop();
+
+  const btn=document.getElementById('recBtn');
+  btn.classList.remove('recording');
+  document.getElementById('recLabel').textContent='Nahrať video';
+  document.getElementById('liveBadge').style.display='flex';
+  document.getElementById('recBadge').style.display='none';
+  document.getElementById('recTimer').style.display='none';
+  document.getElementById('instruct').style.opacity='1';
+  document.getElementById('thermal').style.opacity='0';
+  document.getElementById('gridFx').style.opacity='0';
+
+  if(save){
+    captureThumb();
+    shotsDone=Math.min(shotsDone+1,3);
+    document.getElementById('shotCount').textContent=shotsDone;
+    updateDots();
+
+    if(currentMode==='foot' && shotsDone===1){
+      document.getElementById('instruct').textContent='✅ Noha ok! Teraz naskenuj topánku →';
+      setTimeout(()=>switchMode('shoe'),1200);
+    } else if(currentMode==='shoe' && shotsDone>=2){
+      setTimeout(()=>startProcessing(),600);
+    }
+  }
+}
+
+// ── THUMBNAIL ──
+function captureThumb(){
+  const v=document.getElementById('vid');
+  const c=document.createElement('canvas'); c.width=160;c.height=120;
+  const x=c.getContext('2d');
+  try{ x.drawImage(v,0,0,160,120); }catch(e){return;}
+  const url=c.toDataURL('image/jpeg',.8);
+  thumbDataURLs.push(url);
+
+  // Add to photo strip on 3D screen
+  const strip=document.getElementById('photoStrip');
+  const wrap=document.createElement('div'); wrap.className='pthumb';
+  const img=document.createElement('img'); img.src=url;
+  wrap.appendChild(img); strip.appendChild(wrap);
+}
+
+// ── PROCESSING ──
+const procSteps=[
+  'Detegujem obrysy nohy…',
+  'Mapujem 3D povrch…',
+  'Meriam dĺžku chodidla…',
+  'Analyzujem šírku…',
+  'Kalibrácia klenby…',
+  'Počítam objem…',
+  'Generujem mesh…',
+  'Porovnávam s databázou…',
+  'Počítam fit score…',
+  'Finalizujem model…',
+];
+const cellOrder=[0,1,2,3,4,5,6,7];
+
+function startProcessing(){
+  // Show video thumbnail in processing screen
+  const pv=document.getElementById('procVid');
+  if(vidStream){ pv.srcObject=vidStream; pv.play().catch(()=>{}); }
+
+  goTo('processing');
+  let p=0, si=0, ci=0;
+  document.getElementById('procFill').style.width='0%';
+  document.getElementById('procPct').textContent='0%';
+  cellOrder.forEach(i=>{ const c=document.getElementById('sc'+i); c.className='scan-cell'; });
+
+  const iv=setInterval(()=>{
+    p=Math.min(p+(Math.random()*3.5+1.5),100);
+    document.getElementById('procFill').style.width=p+'%';
+    document.getElementById('procPct').textContent=Math.round(p)+'%';
+
+    const ni=Math.min(Math.floor(p/10),procSteps.length-1);
+    if(ni>si){ si=ni; document.getElementById('procStep').textContent=procSteps[si]; }
+
+    const nc=Math.floor(p/12.5);
+    while(ci<nc && ci<cellOrder.length){
+      document.getElementById('sc'+cellOrder[ci]).className='scan-cell done';
+      ci++;
+    }
+    if(ci<cellOrder.length) document.getElementById('sc'+cellOrder[ci]).className='scan-cell active';
+
+    if(p>=100){
+      clearInterval(iv);
+      setTimeout(()=>{ goTo('model3d'); init3D(); },600);
+    }
+  },150);
+}
+
+// ── HUD CANVAS ──
+function hudLoop(ts){
+  rafId=requestAnimationFrame(hudLoop);
   if(!lastTS) lastTS=ts;
   const dt=Math.min((ts-lastTS)/1000,.05); lastTS=ts; appT+=dt;
-  const c=hudCtx();
-  const W=c.canvas.width, H=c.canvas.height;
+  const hud=document.getElementById('hud');
+  const c=hud.getContext('2d');
+  const W=hud.width, H=hud.height;
   c.clearRect(0,0,W,H);
-  if(scanning){ scanLineY=(scanLineY+dt*.5)%1; drawScanLine(c,W,H); }
-  drawHUD(c,W,H);
+  if(isRecording) drawScanLine(c,W,H);
+  drawBrackets(c,W,H);
+  if(isRecording) drawPointCloud(c,W,H);
 }
 
+let slY=0;
 function drawScanLine(c,W,H){
-  const y=scanLineY*H;
+  slY=(slY+.007)%1;
+  const y=slY*H;
   c.save();
   const lg=c.createLinearGradient(0,0,W,0);
   lg.addColorStop(0,'transparent'); lg.addColorStop(.15,'rgba(0,229,255,.9)');
@@ -338,347 +714,161 @@ function drawScanLine(c,W,H){
   c.restore();
 }
 
-function drawHUD(c,W,H){
-  const cx=W/2, cy=H*.44, bw=W*.36, bh=H*.23, arm=26;
+function drawBrackets(c,W,H){
+  const cx=W/2, cy=H*.44, bw=W*.38, bh=H*.24, arm=28;
   const pulse=.5+.5*Math.sin(appT*2);
-  const col=scanDone?'rgba(34,197,94,.95)':scanning?`rgba(0,229,255,${.6+.35*pulse})`:`rgba(0,229,255,${.25+.2*pulse})`;
+  const col=isRecording?`rgba(255,60,60,${.7+.3*pulse})`:`rgba(0,229,255,${.28+.22*pulse})`;
   c.save(); c.strokeStyle=col; c.lineWidth=2.5; c.lineCap='round';
   [[cx-bw,cy-bh,1,1],[cx+bw,cy-bh,-1,1],[cx-bw,cy+bh,1,-1],[cx+bw,cy+bh,-1,-1]].forEach(([x,y,dx,dy])=>{
     c.beginPath(); c.moveTo(x+dx*arm,y); c.lineTo(x,y); c.lineTo(x,y+dy*arm); c.stroke();
   });
-  c.strokeStyle='rgba(0,229,255,.2)'; c.lineWidth=1;
-  c.beginPath(); c.moveTo(cx,cy-7); c.lineTo(cx,cy+7); c.stroke();
-  c.beginPath(); c.moveTo(cx-7,cy); c.lineTo(cx+7,cy); c.stroke();
+  c.strokeStyle=isRecording?'rgba(255,60,60,.2)':'rgba(0,229,255,.18)'; c.lineWidth=1;
+  c.beginPath();c.moveTo(cx,cy-8);c.lineTo(cx,cy+8);c.stroke();
+  c.beginPath();c.moveTo(cx-8,cy);c.lineTo(cx+8,cy);c.stroke();
   c.restore();
+}
 
-  if(scanning||scanDone){
-    const n=Math.floor(prog*160);
-    for(let i=0;i<n;i++){
-      const px=cx+(sd(i*127.1)-.5)*bw*2.3, py=cy+(sd(i*311.7)-.5)*bh*2.3;
-      const fl=.2+.8*Math.abs(Math.sin(appT*3.5+i));
-      c.beginPath(); c.arc(px,py,1.6,0,Math.PI*2);
-      c.fillStyle=`hsla(${175+sd(i*71)*90},100%,68%,${fl*.7})`; c.fill();
-    }
+let pcProg=0;
+function drawPointCloud(c,W,H){
+  pcProg=Math.min(pcProg+.008,1);
+  const cx=W/2, cy=H*.44, bw=W*.38, bh=H*.24;
+  const n=Math.floor(pcProg*120);
+  for(let i=0;i<n;i++){
+    const px=cx+(sd(i*127.1)-.5)*bw*2.2, py=cy+(sd(i*311.7)-.5)*bh*2.2;
+    const fl=.2+.8*Math.abs(Math.sin(appT*3+i));
+    c.beginPath(); c.arc(px,py,1.5,0,Math.PI*2);
+    c.fillStyle=`hsla(${175+sd(i*71)*90},100%,65%,${fl*.65})`; c.fill();
   }
-  if(prog>.38) bdg(c,'26.3 cm  Dĺžka', cx-bw-4,  cy-18,  W,H);
-  if(prog>.58) bdg(c,'9.8 cm  Šírka',  cx+bw-114,cy+22,  W,H);
-  if(prog>.78) bdg(c,'EU 41  Veľkosť', cx-52,    cy+bh+11,W,H);
-  if(prog>.15) legend(c,W,H);
 }
+function sd(x){return Math.abs(Math.sin(x)*43758.5)%1;}
 
-function sd(x){ return Math.abs(Math.sin(x)*43758.5)%1; }
-function bdg(c,txt,x,y,W,H){
-  x=Math.max(5,Math.min(W-122,x)); y=Math.max(70,Math.min(H-140,y));
-  c.save();
-  c.fillStyle='rgba(0,0,0,.7)'; rr(c,x,y,118,26,7); c.fill();
-  c.strokeStyle='rgba(0,229,255,.4)'; c.lineWidth=1; rr(c,x,y,118,26,7); c.stroke();
-  c.beginPath(); c.arc(x+10,y+13,3,0,Math.PI*2); c.fillStyle='rgba(0,229,255,.95)'; c.fill();
-  c.font='bold 11px DM Sans,sans-serif'; c.fillStyle='#00e5ff'; c.fillText(txt,x+18,y+17); c.restore();
-}
-function legend(c,W,H){
-  const x=W-21,y=H*.36,h=H*.26;
-  c.save();
-  const g=c.createLinearGradient(0,y,0,y+h);
-  g.addColorStop(0,'#ff1111'); g.addColorStop(.3,'#ff8800'); g.addColorStop(.5,'#00ff88'); g.addColorStop(.7,'#00aaff'); g.addColorStop(1,'#0011ff');
-  c.fillStyle=g; rr(c,x,y,10,h,5); c.fill();
-  c.strokeStyle='rgba(255,255,255,.12)'; c.lineWidth=1; rr(c,x,y,10,h,5); c.stroke();
-  c.font='8px DM Sans,sans-serif'; c.fillStyle='rgba(255,255,255,.4)';
-  c.fillText('Blíz',x-14,y+9); c.fillText('Ďal',x-12,y+h+2); c.restore();
-}
-function rr(c,x,y,w,h,r){
-  c.beginPath(); c.moveTo(x+r,y); c.lineTo(x+w-r,y); c.arcTo(x+w,y,x+w,y+r,r);
-  c.lineTo(x+w,y+h-r); c.arcTo(x+w,y+h,x+w-r,y+h,r);
-  c.lineTo(x+r,y+h); c.arcTo(x,y+h,x,y+h-r,r);
-  c.lineTo(x,y+r); c.arcTo(x,y,x+r,y,r); c.closePath();
-}
-
-// ── SCAN ──
-const conf={
-  foot:{steps:['Detegujem povrch…','Mapujem kontúry…','Meriam dĺžku…','Meriam šírku…','Analyzujem klenbu…','Generujem 3D model…','Finalizujem…'],okTitle:'Noha naskenovaná!',okSub:'Vytváram 3D model…',nextLbl:'🦶 Zobraziť 3D model',next:()=>{ goTo('model3d'); init3D(); }},
-  shoe:{steps:['Detegujem topánku…','Meriam vnútro…','Hĺbka stielky…','Šírka špice…','Matchujem profily…','Počítam fit score…','Hotovo!'],okTitle:'Topánka naskenovaná!',okSub:'Spúšťam matching…',nextLbl:'📊 Výsledky',next:()=>goTo('results')}
-};
-
-function setMode(m){
-  mode=m;
-  document.getElementById('tFoot').classList.toggle('on',m==='foot');
-  document.getElementById('tShoe').classList.toggle('on',m==='shoe');
-  reset();
-}
-function reset(){
-  scanning=false; scanDone=false; prog=0; scanLineY=0;
-  clearInterval(scanTimer);
-  document.getElementById('pfill').style.width='0%';
-  document.getElementById('ppct').textContent='0%';
-  document.getElementById('plbl').textContent=mode==='foot'?'Umiestni nohu do rámu':'Umiestni topánku do rámu';
-  const b=document.getElementById('abtn');
-  b.className='abtn'; b.disabled=false;
-  b.textContent=mode==='foot'?'📸 Skenovať nohu':'📸 Skenovať topánku';
-  b.onclick=startScan;
-  document.getElementById('dov').classList.remove('show');
-  document.getElementById('thermal').style.opacity='0';
-  document.getElementById('grid').classList.remove? document.getElementById('grid').style.opacity='0':null;
-}
-
-function startScan(){
-  if(scanning) return;
-  scanning=true; prog=0;
-  document.getElementById('abtn').disabled=true;
-  document.getElementById('abtn').textContent='Skenujem…';
-  document.getElementById('grid').style.opacity='1';
-  const th=document.getElementById('thermal');
-  const cf=conf[mode];
-  scanTimer=setInterval(()=>{
-    prog=Math.min(prog+(Math.random()*.028+.013),1);
-    th.style.opacity=Math.min(prog*1.3,.7);
-    const pct=Math.round(prog*100);
-    document.getElementById('pfill').style.width=pct+'%';
-    document.getElementById('ppct').textContent=pct+'%';
-    document.getElementById('plbl').textContent=cf.steps[Math.min(Math.floor(prog*cf.steps.length),cf.steps.length-1)];
-    if(prog>=1){
-      clearInterval(scanTimer); scanning=false; scanDone=true;
-      setTimeout(()=>{
-        document.getElementById('dtit').textContent=cf.okTitle;
-        document.getElementById('dsub').textContent=cf.okSub;
-        const nx=document.getElementById('dnxt');
-        nx.textContent=cf.nextLbl;
-        nx.onclick=()=>{ document.getElementById('dov').classList.remove('show'); cf.next(); };
-        document.getElementById('dov').classList.add('show');
-        document.getElementById('abtn').className='abtn done';
-        document.getElementById('abtn').textContent='✓ Hotovo';
-      },300);
-    }
-  },130);
-}
-
-// ══════════════════════════════════════
-//  THREE.JS 3D FOOT MODEL
-// ══════════════════════════════════════
-let threeRenderer, threeScene, threeCamera, footGroup, animRaf;
-let isDragging=false, prevX=0, prevY=0, rotX=0.3, rotY=0;
+// ══════════════════════════════
+//  THREE.JS 3D FOOT
+// ══════════════════════════════
+let tR=null, tS=null, tC=null, fG=null, tRaf=null;
+let isDrag=false,pX=0,pY=0,rX=0.25,rY=0,t3=0;
 
 function init3D(){
-  const canvas = document.getElementById('threeCanvas');
+  const cv=document.getElementById('threeCanvas');
   const W=window.innerWidth, H=window.innerHeight;
 
-  if(threeRenderer){
-    threeRenderer.setSize(W,H);
-    threeScene.clear();
-    buildFoot();
-    animate3D();
-    return;
+  if(!tR){
+    tR=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:false});
+    tR.setClearColor(0x07070f,1);
+
+    tC=new THREE.PerspectiveCamera(44,W/H,.1,100);
+    tC.position.set(0,1.4,4.8);
+    tC.lookAt(0,0,0);
+
+    tS=new THREE.Scene();
+    tS.add(new THREE.AmbientLight(0x223344,1.3));
+    const d1=new THREE.DirectionalLight(0x00e5ff,2.8); d1.position.set(2,4,3); tS.add(d1);
+    const d2=new THREE.DirectionalLight(0x7c3aed,1.6); d2.position.set(-3,-1,-2); tS.add(d2);
+    const p1=new THREE.PointLight(0x00ffaa,1.2,9); p1.position.set(0,2,0); tS.add(p1);
+
+    const grid=new THREE.GridHelper(12,24,0x00e5ff,0x0a1a2a);
+    grid.position.y=-1.15; grid.material.opacity=.25; grid.material.transparent=true; tS.add(grid);
+
+    cv.addEventListener('touchstart',e=>{isDrag=true;pX=e.touches[0].clientX;pY=e.touches[0].clientY;});
+    cv.addEventListener('touchmove',e=>{
+      if(!isDrag)return; e.preventDefault();
+      rY+=(e.touches[0].clientX-pX)*.009; rX+=(e.touches[0].clientY-pY)*.009;
+      rX=Math.max(-.7,Math.min(.9,rX));
+      pX=e.touches[0].clientX; pY=e.touches[0].clientY;
+    },{passive:false});
+    cv.addEventListener('touchend',()=>isDrag=false);
+    cv.addEventListener('mousedown',e=>{isDrag=true;pX=e.clientX;pY=e.clientY;});
+    cv.addEventListener('mousemove',e=>{
+      if(!isDrag)return;
+      rY+=(e.clientX-pX)*.009; rX+=(e.clientY-pY)*.009;
+      rX=Math.max(-.7,Math.min(.9,rX));
+      pX=e.clientX; pY=e.clientY;
+    });
+    cv.addEventListener('mouseup',()=>isDrag=false);
+    window.addEventListener('resize',()=>{
+      const W=window.innerWidth,H=window.innerHeight;
+      tC.aspect=W/H; tC.updateProjectionMatrix(); tR.setSize(W,H);
+    });
   }
 
-  threeRenderer = new THREE.WebGLRenderer({ canvas, antialias:true, alpha:true });
-  threeRenderer.setSize(W,H);
-  threeRenderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
-  threeRenderer.setClearColor(0x07070f,1);
+  tR.setSize(W,H); tR.setPixelRatio(Math.min(devicePixelRatio,2));
+  tC.aspect=W/H; tC.updateProjectionMatrix();
+  if(tS) while(tS.children.length>3) tS.remove(tS.children[tS.children.length-1]);
 
-  threeScene = new THREE.Scene();
+  buildFoot3D();
+  cancelAnimationFrame(tRaf);
+  anim3D();
 
-  threeCamera = new THREE.PerspectiveCamera(45, W/H, 0.1, 100);
-  threeCamera.position.set(0, 1.5, 4.5);
-  threeCamera.lookAt(0,0,0);
-
-  // Lights
-  const amb = new THREE.AmbientLight(0x223344, 1.2);
-  threeScene.add(amb);
-  const dir = new THREE.DirectionalLight(0x00e5ff, 2.5);
-  dir.position.set(2,4,3); threeScene.add(dir);
-  const dir2 = new THREE.DirectionalLight(0x7c3aed, 1.5);
-  dir2.position.set(-3,-1,-2); threeScene.add(dir2);
-  const pt = new THREE.PointLight(0x00ffaa, 1, 8);
-  pt.position.set(0,2,0); threeScene.add(pt);
-
-  buildFoot();
-
-  // Grid floor
-  const grid = new THREE.GridHelper(10,20,0x00e5ff,0x112233);
-  grid.position.y=-1.1;
-  grid.material.opacity=0.3; grid.material.transparent=true;
-  threeScene.add(grid);
-
-  // Touch/mouse rotation
-  canvas.addEventListener('touchstart', e=>{ isDragging=true; prevX=e.touches[0].clientX; prevY=e.touches[0].clientY; });
-  canvas.addEventListener('touchmove',  e=>{ if(!isDragging)return; e.preventDefault();
-    rotY+=(e.touches[0].clientX-prevX)*.008; rotX+=(e.touches[0].clientY-prevY)*.008;
-    rotX=Math.max(-.6,Math.min(.9,rotX));
-    prevX=e.touches[0].clientX; prevY=e.touches[0].clientY;
-  },{passive:false});
-  canvas.addEventListener('touchend',  ()=>isDragging=false);
-  canvas.addEventListener('mousedown', e=>{ isDragging=true; prevX=e.clientX; prevY=e.clientY; });
-  canvas.addEventListener('mousemove', e=>{ if(!isDragging)return;
-    rotY+=(e.clientX-prevX)*.008; rotX+=(e.clientY-prevY)*.008;
-    rotX=Math.max(-.6,Math.min(.9,rotX));
-    prevX=e.clientX; prevY=e.clientY;
-  });
-  canvas.addEventListener('mouseup', ()=>isDragging=false);
-
-  window.addEventListener('resize',()=>{
-    const W=window.innerWidth,H=window.innerHeight;
-    threeCamera.aspect=W/H; threeCamera.updateProjectionMatrix();
-    threeRenderer.setSize(W,H);
-  });
-
-  animate3D();
-
-  // Hint
   setTimeout(()=>{
-    const h=document.getElementById('rhint'); h.classList.add('show');
-    setTimeout(()=>h.classList.remove('show'),2500);
-  },800);
+    const h=document.getElementById('dragHint'); h.classList.add('show');
+    setTimeout(()=>h.classList.remove('show'),2800);
+  },600);
 }
 
-function buildFoot(){
-  footGroup = new THREE.Group();
-  threeScene.add(footGroup);
+function buildFoot3D(){
+  fG=new THREE.Group(); tS.add(fG);
 
-  const mat = new THREE.MeshPhongMaterial({
-    color:0x0a2040, emissive:0x001830, specular:0x00e5ff,
-    shininess:80, wireframe:false, transparent:true, opacity:.92
-  });
-  const wireMat = new THREE.MeshBasicMaterial({
-    color:0x00e5ff, wireframe:true, transparent:true, opacity:.18
-  });
+  const mat=new THREE.MeshPhongMaterial({color:0x0a1e38,emissive:0x001428,specular:0x00e5ff,shininess:90,transparent:true,opacity:.94});
+  const wMat=new THREE.MeshBasicMaterial({color:0x00e5ff,wireframe:true,transparent:true,opacity:.14});
 
-  // ── Main foot body using lathe geometry ──
-  // Side profile of foot (outline points from heel to toe)
-  const footProfile = [];
-  const profilePts = [
-    [0.0, -1.0],  // heel bottom
-    [0.35,-1.0],
-    [0.55,-0.85],
-    [0.62,-0.6],
-    [0.60,-0.3],  // arch
-    [0.58, 0.0],
-    [0.62, 0.3],  // ball
-    [0.58, 0.6],
-    [0.50, 0.8],
-    [0.30, 1.0],  // toe
-    [0.0,  1.05],
-  ];
-  // We'll use ExtrudeGeometry with a custom foot shape instead
+  // Main foot shape
+  const sh=new THREE.Shape();
+  sh.moveTo(0,-1.0);
+  sh.bezierCurveTo(-0.52,-1.0,-0.62,-0.5,-0.60,0);
+  sh.bezierCurveTo(-0.62,0.38,-0.56,0.68,-0.36,0.88);
+  sh.bezierCurveTo(-0.10,1.06, 0.10,1.06, 0.34,0.88);
+  sh.bezierCurveTo( 0.56,0.68, 0.62,0.38, 0.60,0);
+  sh.bezierCurveTo( 0.62,-0.5, 0.52,-1.0, 0.0,-1.0);
 
-  // Foot shape (top view)
-  const shape = new THREE.Shape();
-  shape.moveTo(0, -1.0);         // heel
-  shape.bezierCurveTo(-0.5,-1.0, -0.6,-0.5, -0.58, 0);   // left side
-  shape.bezierCurveTo(-0.60, 0.4, -0.55, 0.7, -0.35, 0.9); // left toe area
-  shape.bezierCurveTo(-0.1, 1.08,  0.1, 1.08,  0.35, 0.9); // toes top
-  shape.bezierCurveTo( 0.55, 0.7,  0.60, 0.4,  0.58, 0);   // right side
-  shape.bezierCurveTo( 0.60,-0.5,  0.50,-1.0,  0.0, -1.0); // back to heel
+  const ext={depth:.36,bevelEnabled:true,bevelThickness:.07,bevelSize:.055,bevelSegments:4,steps:3};
+  const fg=new THREE.ExtrudeGeometry(sh,ext);
+  fg.rotateX(-Math.PI/2); fg.translate(0,-.08,0);
+  fG.add(new THREE.Mesh(fg,mat));
+  fG.add(new THREE.Mesh(fg,wMat));
 
-  const extSettings = {
-    depth: 0.38,
-    bevelEnabled: true,
-    bevelThickness: 0.08,
-    bevelSize: 0.06,
-    bevelSegments: 4,
-    steps: 3,
-  };
-
-  const footGeo = new THREE.ExtrudeGeometry(shape, extSettings);
-  footGeo.rotateX(-Math.PI/2);
-  footGeo.translate(0, -0.1, 0);
-
-  const footMesh = new THREE.Mesh(footGeo, mat);
-  const footWire = new THREE.Mesh(footGeo, wireMat);
-  footGroup.add(footMesh);
-  footGroup.add(footWire);
-
-  // ── Toes ──
-  const toeDefs = [
-    {x:-0.28, z: 0.88, r:0.10, h:0.20},  // big toe
-    {x:-0.14, z: 0.95, r:0.08, h:0.17},
-    {x: 0.00, z: 0.96, r:0.07, h:0.15},
-    {x: 0.13, z: 0.93, r:0.065,h:0.13},
-    {x: 0.24, z: 0.87, r:0.055,h:0.11},
-  ];
-  toeDefs.forEach(td=>{
-    const tg = new THREE.CylinderGeometry(td.r*.7, td.r, td.h, 10);
-    const tm = new THREE.Mesh(tg, mat);
-    tm.position.set(td.x, 0.16, td.z);
-    footGroup.add(tm);
-    // toe wire
-    const tw = new THREE.Mesh(tg, wireMat);
-    tw.position.copy(tm.position);
-    footGroup.add(tw);
-    // toe tip sphere
-    const sg = new THREE.SphereGeometry(td.r*.72, 8, 6);
-    const sm = new THREE.Mesh(sg, mat);
-    sm.position.set(td.x, 0.16+td.h*.4, td.z);
-    footGroup.add(sm);
+  // Toes
+  [{x:-.28,z:.87,r:.10,h:.19},{x:-.14,z:.94,r:.08,h:.16},{x:.00,z:.95,r:.07,h:.14},{x:.13,z:.92,r:.065,h:.12},{x:.24,z:.86,r:.055,h:.10}].forEach(td=>{
+    const tg=new THREE.CylinderGeometry(td.r*.65,td.r,td.h,10);
+    const tm=new THREE.Mesh(tg,mat); tm.position.set(td.x,.15,td.z); fG.add(tm);
+    fG.add(Object.assign(new THREE.Mesh(tg,wMat),{position:tm.position.clone()}));
+    const sg=new THREE.SphereGeometry(td.r*.7,8,6);
+    const sm=new THREE.Mesh(sg,mat); sm.position.set(td.x,.15+td.h*.38,td.z); fG.add(sm);
   });
 
-  // ── Ankle bump ──
-  const ankleG = new THREE.SphereGeometry(0.22, 12, 8);
-  const ankleM = new THREE.Mesh(ankleG, mat);
-  ankleM.position.set(0, 0.20, -0.82);
-  ankleM.scale.set(1.2,0.8,0.7);
-  footGroup.add(ankleM);
+  // Ankle
+  const ag=new THREE.SphereGeometry(.21,12,8);
+  const am=new THREE.Mesh(ag,mat); am.position.set(0,.18,-.82); am.scale.set(1.2,.78,.68); fG.add(am);
 
-  // ── Measurement lines ──
-  const lineMat = new THREE.LineBasicMaterial({ color:0x00e5ff, transparent:true, opacity:.7 });
+  // Measurement lines
+  const lm=new THREE.LineBasicMaterial({color:0x00e5ff,transparent:true,opacity:.65});
+  fG.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,-.14,-1.02),new THREE.Vector3(0,-.14,1.0)]),lm));
+  fG.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-.63,-.09,.14),new THREE.Vector3(.63,-.09,.14)]),lm));
 
-  // Length line
-  const lengthPts = [new THREE.Vector3(0,-0.15,-1.02), new THREE.Vector3(0,-0.15,1.0)];
-  const lengthLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints(lengthPts), lineMat);
-  footGroup.add(lengthLine);
-
-  // Width line
-  const widthPts = [new THREE.Vector3(-0.62,-0.1,0.15), new THREE.Vector3(0.62,-0.1,0.15)];
-  const widthLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints(widthPts), lineMat);
-  footGroup.add(widthLine);
-
-  // ── Floating measurement labels (sprites) ──
-  function makeLabel(text, pos){
-    const canvas2 = document.createElement('canvas');
-    canvas2.width=200; canvas2.height=56;
-    const ctx2=canvas2.getContext('2d');
-    ctx2.fillStyle='rgba(0,0,0,.7)';
-    ctx2.roundRect? ctx2.roundRect(2,2,196,52,10) : ctx2.fillRect(2,2,196,52);
-    ctx2.fill();
-    ctx2.strokeStyle='rgba(0,229,255,.6)'; ctx2.lineWidth=1.5;
-    ctx2.roundRect? ctx2.roundRect(2,2,196,52,10) : ctx2.strokeRect(2,2,196,52);
-    ctx2.stroke();
-    ctx2.fillStyle='#00e5ff'; ctx2.font='bold 22px sans-serif'; ctx2.textAlign='center';
-    ctx2.fillText(text, 100, 35);
-    const tex=new THREE.CanvasTexture(canvas2);
-    const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true}));
-    sp.scale.set(1.1,.32,1); sp.position.copy(pos);
-    footGroup.add(sp);
-  }
-  makeLabel('26.3 cm', new THREE.Vector3(-1.1,-0.1,0));
-  makeLabel('9.8 cm',  new THREE.Vector3(0,-0.1,1.35));
-  makeLabel('EU 41',   new THREE.Vector3(0.9, 0.4,-.5));
-
-  // Position group
-  footGroup.rotation.x = rotX;
-  footGroup.rotation.y = rotY;
+  // Labels
+  lbl('26.3 cm',new THREE.Vector3(-1.14,-.08,.0));
+  lbl('9.8 cm', new THREE.Vector3(.0,-.08,1.34));
+  lbl('EU 41',  new THREE.Vector3(.94,.42,-.48));
 }
 
-let t3=0;
-function animate3D(){
-  animRaf=requestAnimationFrame(animate3D);
-  if(!document.getElementById('model3d').classList.contains('active')){ cancelAnimationFrame(animRaf); return; }
-  t3+=0.016;
+function lbl(txt,pos){
+  const c=document.createElement('canvas'); c.width=200;c.height=56;
+  const x=c.getContext('2d');
+  x.fillStyle='rgba(0,0,0,.72)'; x.beginPath(); x.roundRect(2,2,196,52,10); x.fill();
+  x.strokeStyle='rgba(0,229,255,.55)'; x.lineWidth=1.5; x.beginPath(); x.roundRect(2,2,196,52,10); x.stroke();
+  x.fillStyle='#00e5ff'; x.font='bold 22px sans-serif'; x.textAlign='center'; x.fillText(txt,100,35);
+  const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),transparent:true}));
+  sp.scale.set(1.1,.32,1); sp.position.copy(pos); fG.add(sp);
+}
 
-  if(!isDragging){
-    rotY += 0.005; // slow auto-rotate
-  }
-  footGroup.rotation.x = rotX;
-  footGroup.rotation.y = rotY;
-
-  // Subtle float
-  footGroup.position.y = Math.sin(t3*.8)*.04;
-
-  // Pulse wireframe opacity
-  footGroup.children.forEach(c=>{
-    if(c.material && c.material.wireframe){
-      c.material.opacity = .12 + .08*Math.sin(t3*1.5);
-    }
-  });
-
-  threeRenderer.render(threeScene, threeCamera);
+function anim3D(){
+  tRaf=requestAnimationFrame(anim3D);
+  if(!document.getElementById('model3d').classList.contains('active')){cancelAnimationFrame(tRaf);return;}
+  t3+=.016;
+  if(!isDrag) rY+=.005;
+  fG.rotation.x=rX; fG.rotation.y=rY;
+  fG.position.y=Math.sin(t3*.8)*.04;
+  fG.children.forEach(c=>{if(c.material&&c.material.wireframe) c.material.opacity=.10+.07*Math.sin(t3*1.5);});
+  tR.render(tS,tC);
 }
 </script>
 
